@@ -78,6 +78,32 @@ contract LifeOutGenesis is Ownable, ERC721 {
     /// @param merkleRoot xxxxxx
     event SetMerkleRoot(address indexed owner, bytes32 merkleRoot);
 
+    event WithdrawProceeds(address indexed owner, uint256 balance);
+
+    event AddWhiteListFirst(address indexed user);
+
+    event AddWhiteListSecond(address indexed user);
+
+    event AddWhiteListThird(address indexed user);
+
+    event DeleteWhiteListFirst(address indexed user);
+
+    event DeleteWhiteListSecond(address indexed user);
+
+    event DeleteWhiteListThird(address indexed user);
+
+    event SetNftFirts(address indexed owner, uint256 supply);
+
+    event SetNftSecond(address indexed owner, uint256 supply);
+
+    event SetNftThird(address indexed owner, uint256 supply);
+
+    event SetStartSecondStage (address indexed owner);
+
+    event SetStartThirdStage (address indexed owner);
+
+    event SetStartPublicSale (address indexed owner, bool state);
+
 
     /// ===========================================
     /// ============ Constructor ==================
