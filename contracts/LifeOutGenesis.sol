@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
+
+
 /// ============ Imports ============
 import "@openzeppelin/contracts/access/Ownable.sol"; // OZ: Ownership
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol"; // OZ: ERC721
@@ -210,24 +213,123 @@ contract LifeOutGenesis is Ownable, ERC721 {
     }
 
 
+    //****************************************************** */
+    //******************funcition URI ********************** */
     ///@notice return string of baseURI
     function _baseURI() internal view virtual override returns (string memory) {
         return baseURI;
     }
 
     ///@notice Sets baseURI of NFT
-    ///@param _setBaseUri string whit baseURI 
+    ///@param _setBaseUri string whit baseURI
     function setBaseURI(string memory _setBaseUri) external onlyOwner {
         baseURI = _setBaseUri;
         emit SetBaseURI(msg.sender, _setBaseUri);
     }
 
+    //************************************************ */
+    //*********** add withe list **********************/
+    function addWhiteListFirst(address _address) internal {
+        whiteListFirst[_address] = true;
+        emit AddWhiteListFirst(_address);
+    }
+
+    function addWhiteListThird(address _address) internal {
+        whiteListThird[_address] = true;
+        emit AddWhiteListThird(_address);
+    }
+
+    function addWhiteListSecond(address _address) internal {
+        whiteListSecond[_address] = true;
+        emit AddWhiteListSecond(_address);
+    }
+
+    ///@notice Add white list for the first phase
+    ///@param _witheList list of allowed addresses
+    function setWhiteListFirst(address[] calldata _witheList)
+        external
+        onlyOwner
+    {
+        for (uint i; i < _witheList.length; i++) {
+            addWhiteListFirst(_witheList[i]);
+        }
+    }
+
+    ///@notice Add white list for the Second phase
+    ///@param _witheList list of allowed addresses
+    function setWhiteListSecond(address[] calldata _witheList)
+        external
+        onlyOwner
+    {
+        for (uint i; i < _witheList.length; i++) {
+            addWhiteListSecond(_witheList[i]);
+        }
+    }
+
+    ///@notice Add white list for the Third phase
+    ///@param _witheList list of allowed addresses
+    function setWhiteListThird(address[] calldata _witheList)
+        external
+        onlyOwner
+    {
+        for (uint i; i < _witheList.length; i++) {
+            addWhiteListThird(_witheList[i]);
+        }
+    }
+
+    //**************************************************/
+    //*************** delete withe list  ***************/
+    function delteWhiteListFirst(address _address) internal {
+        whiteListFirst[_address] = false;
+        emit DeleteWhiteListFirst(_address);
+    }
+
+    function delteWhiteListSecond(address _address) internal {
+        whiteListSecond[_address] = false;
+        emit DeleteWhiteListSecond(_address);
+    }
+
+    function delteWhiteListThird(address _address) internal {
+        whiteListThird[_address] = false;
+        emit DeleteWhiteListThird(_address);
+    }
+
+    function deleteWhiteListFirst(address[] calldata _witheList)
+        external
+        onlyOwner
+    {
+        for (uint i; i < _witheList.length; i++) {
+            delteWhiteListFirst(_witheList[i]);
+        }
+    }
+
+    function deleteWhiteListThird(address[] calldata _witheList)
+        external
+        onlyOwner
+    {
+        for (uint i; i < _witheList.length; i++) {
+            delteWhiteListThird(_witheList[i]);
+        }
+    }
+
+    function deleteWhiteListSecond(address[] calldata _witheList)
+        external
+        onlyOwner
+    {
+        for (uint i; i < _witheList.length; i++) {
+            delteWhiteListSecond(_witheList[i]);
+        }
+    }
 
 
-  
-    function whiteListMint(bytes32[] calldata _merkleProof) external payable {
 
-        require(!whiteListFirstStageClaimed[msg.sender], "Address has already claimed.");
+    //************************************************* */
+    //************** mint function********************* */
+    function whiteListMint() external payable {
+        require(
+            !whiteListFirstStageClaimed[msg.sender],
+            "Address has already claimed."
+        );
 
         // Ensure sufficient raffle ticket payment
         require(msg.value == mintCost, "Incorrect payment");
@@ -237,12 +339,19 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
         tokenIdCounter.increment();
 
-        whiteListFirstStageClaimed[msg.sender] = true ;
-
-
+        whiteListFirstStageClaimed[msg.sender] = true;
     }
 
+    //****************************************************** */
+    //***************** withdraw function******************* */
 
-    
+    function withdrawProceeds() external onlyOwner {
+        uint256 balace = address(this).balance;
+        require(balace>0, "No funds to transfer");
+        (bool sent, ) = payable(msg.sender).call{value: balace}(""); 
+        require(sent, "Unsuccessful in payout");
+        emit WithdrawProceeds(msg.sender, balace);
+    }
+
 
 }
