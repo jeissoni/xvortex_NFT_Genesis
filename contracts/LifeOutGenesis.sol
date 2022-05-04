@@ -163,11 +163,52 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
 
 
+
+    //****************************************************** */
+    // ************* functions set parameter *************** */
+    ///@notice Allows set price mint by owner
     ///@param _mintCost value price mint
     function setMintCost(uint256 _mintCost) external onlyOwner {
         mintCost = _mintCost;
         emit SetMintCost(msg.sender, _mintCost);
     }
+
+    function setNftFirts(uint256 _supply) external onlyOwner {
+
+        require(_supply < (AVAILABLE_SUPPLY - nftCount), "The new value is not valid");
+        nftFirts = _supply;
+        emit SetNftFirts(msg.sender, _supply);
+    }
+
+    function setNftSecond(uint256 _supply) external onlyOwner {
+
+        require(_supply < (AVAILABLE_SUPPLY - nftCount), "The new value is not valid");
+        nftSecond = _supply;
+        emit SetNftSecond(msg.sender, _supply);
+    }
+
+    function setNftThird(uint256 _supply) external onlyOwner {
+
+        require(_supply < (AVAILABLE_SUPPLY - nftCount), "The new value is not valid");
+        nftThird = _supply;
+        emit SetNftThird(msg.sender, _supply);
+    }
+    
+    function setStartSecondStage() external onlyOwner {
+        startFirstStage = false;
+        startSecondStage = true;
+        emit SetStartSecondStage(msg.sender);        
+    }
+    function setStartThirdStage() external onlyOwner {
+        startSecondStage = false;
+        startThirdStage = true;
+        emit SetStartThirdStage(msg.sender);
+    }
+    function setPublicSale(bool _state) external onlyOwner{
+        startPublicSale = _state;
+        emit SetStartPublicSale(msg.sender, _state);
+    }
+
 
     ///@notice return string of baseURI
     function _baseURI() internal view virtual override returns (string memory) {
