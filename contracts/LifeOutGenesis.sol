@@ -112,6 +112,10 @@ contract LifeOutGenesis is Ownable, ERC721 {
         AVAILABLE_SUPPLY = 999;
         tokenIdCounter.increment();
         mintCost = 0.1 ether;
+        startFirstStage = true;
+        nftFirts = 333;
+        nftSecond = 333;
+        nftThird = 333;
     }
 
     /// ===========================================
