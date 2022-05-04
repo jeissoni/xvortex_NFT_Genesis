@@ -10,49 +10,59 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 ///@title LifeOutGenesis
 ///@author jeissoni
 contract LifeOutGenesis is Ownable, ERC721 {
-
     using Counters for Counters.Counter;
-
 
     /// ===========================================
     /// ============ Immutable storage ============
 
-    /// @notice Available NFT supply    
-    uint256 public immutable AVAILABLE_SUPPLY;
-
-
+    /// @notice Available NFT supply
+    uint256 private immutable AVAILABLE_SUPPLY;
 
     /// ===========================================
     /// ============ Mutable storage ==============
-    
-    /// @notice Number of NFTs minted    
-    uint256 public nftCount = 0;
+
+    /// @notice Number of NFTs minted
+    uint256 private nftCount;
+
+    uint256 private nftFirts;
+
+    uint256 private nftSecond;
+
+    uint256 private nftThird;
+
 
     /// @notice owner activates the mint
-    bool public proceedsMint = false;
+    bool private proceedsMint = false;
 
-    /// @notice Cost to mint each NFT (in wei)    
-    uint256 public mintCost;
+    /// @notice Cost to mint each NFT (in wei)
+    uint256 private mintCost;
 
-    /// @notice if for 
+    /// @notice if for
     Counters.Counter private tokenIdCounter;
 
-    ///@notice string with the base for the tokenURI 
+    ///@notice string with the base for the tokenURI
     string private baseURI;
 
-   
+    bool private startFirstStage ;
+    bool private startSecondStage ;
+    bool private startThirdStage ;
+    bool private startPublicSale ;
 
+    mapping(address => bool) private whiteListFirst;
+
+    mapping(address => bool) private whiteListSecond;
+
+    mapping(address => bool) private whiteListThird;
 
     mapping(address => bool) private whiteListFirstStageClaimed;
 
+    mapping(address => bool) private whiteListSecondStageClaimed;
 
+    mapping(address => bool) private whiteListThirdStageClaimed;
 
-
-    
-    
     /// ===========================================
     /// ============ Events =======================
-    
+
     /// @notice Emitted after owner set mint price
     /// @param owner Address of owner
     /// @param amount in wei per NFT
