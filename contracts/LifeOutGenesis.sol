@@ -121,7 +121,48 @@ contract LifeOutGenesis is Ownable, ERC721 {
     /// ===========================================
     /// ============ Functions ====================
 
-    ///@notice Allows set price mint by owner 
+    //****************************************************** */
+    //********** functions only reed *********************** */
+
+    function  getCurrentTokenId() external view returns(uint256) {
+        return tokenIdCounter.current();
+    }
+    function isStartFirstStage() external view returns (bool) {
+        return startFirstStage;
+    }
+    function isStartSecondStage() external view returns (bool) {
+        return startSecondStage;
+    }
+    function isStartThirdStage() external view returns (bool) {
+        return startThirdStage;
+    }
+    function isStartPublicSale() external view returns (bool){
+        return startPublicSale;
+    }
+    function getAvailabeSupply() external view returns (uint256) {
+        return AVAILABLE_SUPPLY;
+    }
+
+    function getMintCost() external view returns (uint256){
+        return mintCost;
+    }
+
+    function getNftCount() external view returns (uint256) {
+        return nftCount;
+    }
+    function getNftFirts() external view returns (uint256) {
+        return nftFirts;
+    }
+    function getNftSecond() external view returns (uint256) {
+        return nftSecond;
+    }
+    function getnftThird() external view returns (uint256) {
+        return nftThird;
+    }
+
+
+
+
     ///@param _mintCost value price mint
     function setMintCost(uint256 _mintCost) external onlyOwner {
         mintCost = _mintCost;
