@@ -169,6 +169,15 @@ contract LifeOutGenesis is Ownable, ERC721 {
         return nftThird;
     }
 
+    function isWhiteListFirstSatge(address _user) public view returns (bool) {
+        return whiteListFirst[_user];
+    }
+
+    function isWhiteListSecondSatge(address _user) public view returns (bool) {
+        return whiteListSecond[_user];
+    }
+
+
 
 
 
