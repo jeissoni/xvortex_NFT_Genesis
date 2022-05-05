@@ -353,5 +353,10 @@ contract LifeOutGenesis is Ownable, ERC721 {
         emit WithdrawProceeds(msg.sender, balace);
     }
 
+    //******************************************************* */
+    //**************** Fallback Functions ******************* */
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
 
 }
