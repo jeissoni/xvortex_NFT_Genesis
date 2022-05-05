@@ -120,8 +120,7 @@ contract LifeOutGenesis is Ownable, ERC721 {
     constructor() ERC721("Life Out Genesis", "LOG") {
         AVAILABLE_SUPPLY = 999;
         tokenIdCounter.increment();
-        mintCost = 0.1 ether;
-        startFirstStage = true;
+        mintCost = 0.1 ether;        
         nftFirts = 333;
         nftSecond = 333;
         nftThird = 333;
@@ -145,8 +144,12 @@ contract LifeOutGenesis is Ownable, ERC721 {
     function isStartThirdStage() external view returns (bool) {
         return startThirdStage;
     }
-    function isStartPublicSale() external view returns (bool){
-        return startPublicSale;
+    function getStartPublicSale() external view returns (uint256){
+        return startDatePublicSale;
+    }
+
+    function getEndPublicSale() external view returns (uint256){
+        return endDatePublicSale;
     }
     function getAvailabeSupply() external view returns (uint256) {
         return AVAILABLE_SUPPLY;
@@ -259,95 +262,70 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
     //************************************************ */
     //*********** add withe list **********************/
-    function addWhiteListFirst(address _address) internal {
+    function addWhiteListFirstStage(address _address) internal returns (bool){
         whiteListFirst[_address] = true;
-        emit AddWhiteListFirst(_address);
+        return true;       
     }
 
-    function addWhiteListThird(address _address) internal {
-        whiteListThird[_address] = true;
-        emit AddWhiteListThird(_address);
-    }
-
-    function addWhiteListSecond(address _address) internal {
+    function addWhiteListSecondStage( address _address) internal returns (bool) {
         whiteListSecond[_address] = true;
-        emit AddWhiteListSecond(_address);
+        return true;        
     }
 
     ///@notice Add white list for the first phase
     ///@param _witheList list of allowed addresses
-    function setWhiteListFirst(address[] calldata _witheList)
+    function addListWhiteListFirstStage(address[] calldata _witheList)
         external
         onlyOwner
     {
         for (uint i; i < _witheList.length; i++) {
-            addWhiteListFirst(_witheList[i]);
+            require(addWhiteListFirstStage(_witheList[i]), "it was not possible to enter the address");
+            emit AddWhiteListFirstStage(msg.sender , _witheList[i]);
         }
     }
 
     ///@notice Add white list for the Second phase
     ///@param _witheList list of allowed addresses
-    function setWhiteListSecond(address[] calldata _witheList)
+    function addListWhiteListSecondStage(address[] calldata _witheList)
         external
         onlyOwner
     {
         for (uint i; i < _witheList.length; i++) {
-            addWhiteListSecond(_witheList[i]);
+            require(addWhiteListSecondStage(_witheList[i]), "it was not possible to enter the address");
+            emit AddWhiteListSecondStage(msg.sender , _witheList[i]);
         }
     }
 
-    ///@notice Add white list for the Third phase
-    ///@param _witheList list of allowed addresses
-    function setWhiteListThird(address[] calldata _witheList)
-        external
-        onlyOwner
-    {
-        for (uint i; i < _witheList.length; i++) {
-            addWhiteListThird(_witheList[i]);
-        }
-    }
+    
 
+ 
     //**************************************************/
     //*************** delete withe list  ***************/
-    function delteWhiteListFirst(address _address) internal {
+    function delteWhiteListFirstStage(address _address) internal {
         whiteListFirst[_address] = false;
-        emit DeleteWhiteListFirst(_address);
+        emit DeleteWhiteListFirstStage(_address);
     }
 
-    function delteWhiteListSecond(address _address) internal {
+    function delteWhiteListSecondStage(address _address) internal {
         whiteListSecond[_address] = false;
-        emit DeleteWhiteListSecond(_address);
+        emit DeleteWhiteListSecondStage(_address);
     }
 
-    function delteWhiteListThird(address _address) internal {
-        whiteListThird[_address] = false;
-        emit DeleteWhiteListThird(_address);
-    }
-
-    function deleteWhiteListFirst(address[] calldata _witheList)
+    function deleteWhiteListFirstStage(address[] calldata _witheList)
         external
         onlyOwner
     {
         for (uint i; i < _witheList.length; i++) {
-            delteWhiteListFirst(_witheList[i]);
+            delteWhiteListFirstStage(_witheList[i]);
         }
-    }
+    }    
 
-    function deleteWhiteListThird(address[] calldata _witheList)
+    function deleteWhiteListSecondStage(address[] calldata _witheList)
         external
         onlyOwner
     {
         for (uint i; i < _witheList.length; i++) {
-            delteWhiteListThird(_witheList[i]);
-        }
-    }
-
-    function deleteWhiteListSecond(address[] calldata _witheList)
-        external
-        onlyOwner
-    {
-        for (uint i; i < _witheList.length; i++) {
-            delteWhiteListSecond(_witheList[i]);
+            delteWhiteListSecondStage(_witheList[i]);
         }
     }
 
@@ -355,7 +333,7 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
     //************************************************* */
     //************** mint function********************* */
-    function whiteListMint() external payable {
+    function whiteListMintFirstStage() external payable {
         require(
             !whiteListFirstStageClaimed[msg.sender],
             "Address has already claimed."
@@ -372,9 +350,12 @@ contract LifeOutGenesis is Ownable, ERC721 {
         whiteListFirstStageClaimed[msg.sender] = true;
     }
 
+    function whiteListMintSecondtStage() external payable {}
+
+    function whiteListMintThirdStage() external payable {}
+
     //****************************************************** */
     //***************** withdraw function******************* */
-
     function withdrawProceeds() external onlyOwner {
         uint256 balace = address(this).balance;
         require(balace>0, "No funds to transfer");
