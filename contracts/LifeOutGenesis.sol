@@ -212,19 +212,34 @@ contract LifeOutGenesis is Ownable, ERC721 {
         emit SetNftThird(msg.sender, _supply);
     }
     
+    function setStartFirstStage() external onlyOwner {
+        startFirstStage = true;
+        startSecondStage = false;
+        startThirdStage = false;
+        emit SetStartFirstStage(msg.sender);   
+    }
     function setStartSecondStage() external onlyOwner {
         startFirstStage = false;
         startSecondStage = true;
+        startThirdStage = false;
         emit SetStartSecondStage(msg.sender);        
     }
     function setStartThirdStage() external onlyOwner {
+        startFirstStage = false;
         startSecondStage = false;
         startThirdStage = true;
         emit SetStartThirdStage(msg.sender);
     }
-    function setPublicSale(bool _state) external onlyOwner{
-        startPublicSale = _state;
-        emit SetStartPublicSale(msg.sender, _state);
+
+    //this need time to start?
+    function setPublicSale(uint256 _stardDate, uint256 _endDate) external onlyOwner{
+
+        require(_stardDate > block.timestamp , "start time must be greater than current time");
+        require(_endDate > _stardDate, "end time must be greater than start time" );
+
+        startDatePublicSale = _stardDate;
+        endDatePublicSale = _endDate;
+        emit SetStartPublicSale(msg.sender, _stardDate, _endDate);
     }
 
 
