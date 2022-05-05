@@ -85,17 +85,17 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
     event WithdrawProceeds(address indexed owner, uint256 balance);
 
-    event AddWhiteListFirst(address indexed user);
+    event AddWhiteListFirstStage(address indexed owner, address indexed user);
 
-    event AddWhiteListSecond(address indexed user);
+    event AddWhiteListSecondStage(address indexed owner, address indexed user);
 
-    event AddWhiteListThird(address indexed user);
+    // event AddWhiteListThirdStage(address indexed user);
 
-    event DeleteWhiteListFirst(address indexed user);
+    event DeleteWhiteListFirstStage(address indexed user);
 
-    event DeleteWhiteListSecond(address indexed user);
+    event DeleteWhiteListSecondStage(address indexed user);
 
-    event DeleteWhiteListThird(address indexed user);
+    event DeleteWhiteListThirdStage(address indexed user);
 
     event SetNftFirts(address indexed owner, uint256 supply);
 
@@ -103,11 +103,15 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
     event SetNftThird(address indexed owner, uint256 supply);
 
-    event SetStartSecondStage (address indexed owner);
+    event SetStartFirstStage(address indexed owner);
 
-    event SetStartThirdStage (address indexed owner);
+    event SetStartSecondStage(address indexed owner);
 
-    event SetStartPublicSale (address indexed owner, bool state);
+    event SetStartThirdStage(address indexed owner);
+
+    event SetStartPublicSale(address indexed owner, uint256 startDate, uint256 endDate);
+
+    event Received(address indexed user, uint256 amount);
 
 
     /// ===========================================
