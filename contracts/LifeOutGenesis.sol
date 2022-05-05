@@ -49,7 +49,9 @@ contract LifeOutGenesis is Ownable, ERC721 {
     bool private startFirstStage ;
     bool private startSecondStage ;
     bool private startThirdStage ;
-    bool private startPublicSale ;
+
+    uint256 private startDatePublicSale;
+    uint256 private endDatePublicSale;
 
     mapping(address => bool) private whiteListFirst;
 
