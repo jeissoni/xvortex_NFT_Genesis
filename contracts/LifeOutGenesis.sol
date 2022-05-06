@@ -7,7 +7,6 @@ import "hardhat/console.sol";
 /// ============ Imports ============
 import "@openzeppelin/contracts/access/Ownable.sol"; // OZ: Ownership
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol"; // OZ: ERC721
-//import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
 ///@title LifeOutGenesis
@@ -25,7 +24,7 @@ contract LifeOutGenesis is Ownable, ERC721 {
     /// ============ Mutable storage ==============
 
     /// @notice Number of NFTs minted
-    uint256 private nftCount;
+    Counters.Counter private nftCountMint;
 
     uint256 private nftFirts;
 
@@ -91,9 +90,9 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
     // event AddWhiteListThirdStage(address indexed user);
 
-    event DeleteWhiteListFirstStage(address indexed user);
+    event DeleteWhiteListFirstStage(address indexed owner, address indexed user);
 
-    event DeleteWhiteListSecondStage(address indexed user);
+    event DeleteWhiteListSecondStage(address indexed owner,address indexed user);
 
     event DeleteWhiteListThirdStage(address indexed user);
 
@@ -141,8 +140,8 @@ contract LifeOutGenesis is Ownable, ERC721 {
         nftThird = 333;
     }
 
-    /// ===========================================
-    /// ============ Functions ====================
+    /// ======================================================
+    /// ============ Functions ===============================
 
     //****************************************************** */
     //********** functions only reed *********************** */
@@ -150,7 +149,7 @@ contract LifeOutGenesis is Ownable, ERC721 {
     function  getCurrentTokenId() external view returns(uint256) {
         return tokenIdCounter.current();
     }
-    function isStartFirstStage() external view returns (bool) {
+    function isStartFirstStage() public view returns (bool) {
         return startFirstStage;
     }
     function isStartSecondStage() external view returns (bool) {
@@ -175,7 +174,7 @@ contract LifeOutGenesis is Ownable, ERC721 {
     }
 
     function getNftCount() external view returns (uint256) {
-        return nftCount;
+        return nftCountMint.current();
     }
     function getNftFirts() external view returns (uint256) {
         return nftFirts;
@@ -187,16 +186,13 @@ contract LifeOutGenesis is Ownable, ERC721 {
         return nftThird;
     }
 
-    function isWhiteListFirstSatge(address _user) public view returns (bool) {
+    function isWhiteListFirstStage(address _user) public view returns (bool) {
         return whiteListFirst[_user];
     }
 
-    function isWhiteListSecondSatge(address _user) public view returns (bool) {
+    function isWhiteListSecondStage(address _user) public view returns (bool) {
         return whiteListSecond[_user];
     }
-
-
-
 
 
 
@@ -211,21 +207,21 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
     function setNftFirts(uint256 _supply) external onlyOwner {
 
-        require(_supply < (AVAILABLE_SUPPLY - nftCount), "The new value is not valid");
+        require(_supply < (AVAILABLE_SUPPLY - nftCountMint.current()), "The new value is not valid");
         nftFirts = _supply;
         emit SetNftFirts(msg.sender, _supply);
     }
 
     function setNftSecond(uint256 _supply) external onlyOwner {
 
-        require(_supply < (AVAILABLE_SUPPLY - nftCount), "The new value is not valid");
+        require(_supply < (AVAILABLE_SUPPLY - nftCountMint.current()), "The new value is not valid");
         nftSecond = _supply;
         emit SetNftSecond(msg.sender, _supply);
     }
 
     function setNftThird(uint256 _supply) external onlyOwner {
 
-        require(_supply < (AVAILABLE_SUPPLY - nftCount), "The new value is not valid");
+        require(_supply < (AVAILABLE_SUPPLY - nftCountMint.current()), "The new value is not valid");
         nftThird = _supply;
         emit SetNftThird(msg.sender, _supply);
     }
@@ -249,7 +245,6 @@ contract LifeOutGenesis is Ownable, ERC721 {
         emit SetStartThirdStage(msg.sender);
     }
 
-    //this need time to start?
     function setPublicSale(uint256 _stardDate, uint256 _endDate) external onlyOwner{
 
         require(_stardDate > block.timestamp , "start time must be greater than current time");
@@ -293,6 +288,7 @@ contract LifeOutGenesis is Ownable, ERC721 {
         external
         onlyOwner
     {
+        require (_witheList.length <= nftFirts, "the number of addresses must be less than the amount of nft of stage");
         for (uint i; i < _witheList.length; i++) {
             require(addWhiteListFirstStage(_witheList[i]), "it was not possible to enter the address");
             emit AddWhiteListFirstStage(msg.sender , _witheList[i]);
@@ -305,6 +301,7 @@ contract LifeOutGenesis is Ownable, ERC721 {
         external
         onlyOwner
     {
+        require (_witheList.length <= nftFirts, "the number of addresses must be less than the amount of nft of stage");
         for (uint i; i < _witheList.length; i++) {
             require(addWhiteListSecondStage(_witheList[i]), "it was not possible to enter the address");
             emit AddWhiteListSecondStage(msg.sender , _witheList[i]);
@@ -316,31 +313,49 @@ contract LifeOutGenesis is Ownable, ERC721 {
  
     //**************************************************/
     //*************** delete withe list  ***************/
-    function delteWhiteListFirstStage(address _address) internal {
+    function delteWhiteListFirstStage(address _address) internal returns (bool) {
         whiteListFirst[_address] = false;
-        emit DeleteWhiteListFirstStage(_address);
+        return true;
+       
     }
 
-    function delteWhiteListSecondStage(address _address) internal {
+    function delteWhiteListSecondStage(address _address) internal returns (bool) {
         whiteListSecond[_address] = false;
-        emit DeleteWhiteListSecondStage(_address);
+        return true;        
     }
 
-    function deleteWhiteListFirstStage(address[] calldata _witheList)
+    function deleteListWhiteListFirstStage(address[] calldata _witheList)
         external
         onlyOwner
     {
         for (uint i; i < _witheList.length; i++) {
-            delteWhiteListFirstStage(_witheList[i]);
+            
+            require(isWhiteListFirstStage(_witheList[i]), 
+                "the address is not in the whitelist");
+                //string(abi.encodePacked('the address',' is not in the whitelist')));
+            
+            require(delteWhiteListFirstStage(_witheList[i]), 
+                "the address could not delete");
+            //string(abi.encodePacked("the address ", _witheList[i], " could not delete")));
+             
+            emit DeleteWhiteListFirstStage(msg.sender, _witheList[i]);
         }
     }    
 
-    function deleteWhiteListSecondStage(address[] calldata _witheList)
+    function deleteListWhiteListSecondStage(address[] calldata _witheList)
         external
         onlyOwner
     {
+
         for (uint i; i < _witheList.length; i++) {
-            delteWhiteListSecondStage(_witheList[i]);
+            require(isWhiteListSecondStage(_witheList[i]), 
+                "the address is not in the whitelist");
+            //    string(abi.encodePacked("the address ", _witheList[i], " is not in the whitelist")));
+
+             require(delteWhiteListSecondStage(_witheList[i]), 
+                "the address could not delete");
+
+            emit DeleteWhiteListSecondStage(msg.sender, _witheList[i]);
         }
     }
 
@@ -349,23 +364,44 @@ contract LifeOutGenesis is Ownable, ERC721 {
     //************************************************* */
     //************** mint function********************* */
     function whiteListMintFirstStage() external payable {
-        require(
-            !whiteListFirstStageClaimed[msg.sender],
-            "Address has already claimed."
-        );
 
-        // Ensure sufficient raffle ticket payment
-        require(msg.value == mintCost, "Incorrect payment");
+        if(!isStartFirstStage()){
+            revert StageFirtsNotOpen(msg.sender);
+        }
+
+        if(!isWhiteListFirstStage(msg.sender)){
+            revert AddressIsNotWhitleListFirstStage(msg.sender);
+        }
+
+        if (tokenIdCounter.current() > nftFirts){
+            revert NftAmountExceededFirstStage(msg.sender, tokenIdCounter.current(), nftFirts);
+        }      
+
+        if(!whiteListFirstStageClaimed[msg.sender]){
+            revert AddressAlreadyClaimedFirstStage(msg.sender);
+        }
+
+        if(msg.value != mintCost){
+            revert IncorrectPayment(msg.sender, msg.value, mintCost);
+        }
 
         // Mint NFT to caller
         _safeMint(msg.sender, tokenIdCounter.current());
 
+        emit MintNftFirtsStage(msg.sender, tokenIdCounter.current());
+
         tokenIdCounter.increment();
 
         whiteListFirstStageClaimed[msg.sender] = true;
+
     }
 
-    function whiteListMintSecondtStage() external payable {}
+    function whiteListMintSecondtStage() external payable {
+
+        if(!isStartFirstStage()){
+            revert StageFirtsNotOpen(msg.sender);
+        }
+    }
 
     function whiteListMintThirdStage() external payable {}
 
