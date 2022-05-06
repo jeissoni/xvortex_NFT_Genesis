@@ -113,9 +113,24 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
     event Received(address indexed user, uint256 amount);
 
+    event MintNftFirtsStage(address indexed user, uint256 tokenId);
 
-    /// ===========================================
-    /// ============ Constructor ==================
+    ///============= Errors  ======================
+    ///============================================
+    error StageFirtsNotOpen(address user);
+
+    error AddressAlreadyClaimedFirstStage(address user);
+
+    error AddressIsNotWhitleListFirstStage(address user);
+
+    error IncorrectPayment(address user, uint256 available, uint256 required);
+
+    error NftAmountExceededFirstStage(address user, uint256 available, uint256 required);
+
+
+
+    /// ======================================================
+    /// ============ Constructor =============================
 
     constructor() ERC721("Life Out Genesis", "LOG") {
         AVAILABLE_SUPPLY = 999;
