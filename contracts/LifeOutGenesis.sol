@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 ///@title LifeOutGenesis
 ///@author jeissoni
 contract LifeOutGenesis is Ownable, ERC721 {
+
     using Counters for Counters.Counter;
 
     /// ===========================================
@@ -22,10 +23,7 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
     /// ===========================================
     /// ============ Mutable storage ==============
-
-    /// @notice Number of NFTs minted
-    Counters.Counter private nftCountMint;
-
+ 
     uint256 private nftFirts;
 
     uint256 private nftSecond;
@@ -39,7 +37,7 @@ contract LifeOutGenesis is Ownable, ERC721 {
     /// @notice Cost to mint each NFT (in wei)
     uint256 private mintCost;
 
-    /// @notice if for
+    /// @notice Number of NFTs minted
     Counters.Counter private tokenIdCounter;
 
     ///@notice string with the base for the tokenURI
@@ -124,7 +122,7 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
     error IncorrectPayment(address user, uint256 available, uint256 required);
 
-    error NftAmountExceededFirstStage(address user, uint256 available, uint256 required);
+    error NftCountExceededFirstStage(address user, uint256 available, uint256 required);
 
 
 
@@ -173,9 +171,9 @@ contract LifeOutGenesis is Ownable, ERC721 {
         return mintCost;
     }
 
-    function getNftCount() external view returns (uint256) {
-        return nftCountMint.current();
-    }
+    // function getNftCount() external view returns (uint256) {
+    //     return nftCountMint.current();
+    // }
     function getNftFirts() external view returns (uint256) {
         return nftFirts;
     }
@@ -207,21 +205,21 @@ contract LifeOutGenesis is Ownable, ERC721 {
 
     function setNftFirts(uint256 _supply) external onlyOwner {
 
-        require(_supply < (AVAILABLE_SUPPLY - nftCountMint.current()), "The new value is not valid");
+        require(_supply < (AVAILABLE_SUPPLY - tokenIdCounter.current()), "The new value is not valid");
         nftFirts = _supply;
         emit SetNftFirts(msg.sender, _supply);
     }
 
     function setNftSecond(uint256 _supply) external onlyOwner {
 
-        require(_supply < (AVAILABLE_SUPPLY - nftCountMint.current()), "The new value is not valid");
+        require(_supply < (AVAILABLE_SUPPLY - tokenIdCounter.current()), "The new value is not valid");
         nftSecond = _supply;
         emit SetNftSecond(msg.sender, _supply);
     }
 
     function setNftThird(uint256 _supply) external onlyOwner {
 
-        require(_supply < (AVAILABLE_SUPPLY - nftCountMint.current()), "The new value is not valid");
+        require(_supply < (AVAILABLE_SUPPLY - tokenIdCounter.current()), "The new value is not valid");
         nftThird = _supply;
         emit SetNftThird(msg.sender, _supply);
     }
@@ -373,17 +371,17 @@ contract LifeOutGenesis is Ownable, ERC721 {
             revert AddressIsNotWhitleListFirstStage(msg.sender);
         }
 
-        if (tokenIdCounter.current() > nftFirts){
-            revert NftAmountExceededFirstStage(msg.sender, tokenIdCounter.current(), nftFirts);
-        }      
-
-        if(!whiteListFirstStageClaimed[msg.sender]){
-            revert AddressAlreadyClaimedFirstStage(msg.sender);
-        }
-
         if(msg.value != mintCost){
             revert IncorrectPayment(msg.sender, msg.value, mintCost);
         }
+
+        if(whiteListFirstStageClaimed[msg.sender]){
+            revert AddressAlreadyClaimedFirstStage(msg.sender);
+        }
+
+        if (tokenIdCounter.current() > nftFirts){
+            revert NftCountExceededFirstStage(msg.sender, tokenIdCounter.current(), nftFirts);
+        }      
 
         // Mint NFT to caller
         _safeMint(msg.sender, tokenIdCounter.current());
