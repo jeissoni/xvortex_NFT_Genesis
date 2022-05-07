@@ -686,10 +686,13 @@ describe("Life Out Genesis", () => {
         })
     })
 
-    describe("mint Nft",()=>{
+    describe("mint Nft",function(){
+
+        this.timeout(5000);
 
         describe.only("first stage", ()=>{
 
+         
             it("revert first stage is not open", async () => {
                 
                 const { lifeOutGenesisDeploy, user1 } = await deploy()
@@ -712,6 +715,95 @@ describe("Life Out Genesis", () => {
 
             })
 
+            it("revert is value send not is equals to mint cost", async () => {
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
+
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
+
+                await expect(lifeOutGenesisDeploy.connect(user1).
+                whiteListMintFirstStage({value : BigNumber.from(1).mul(10).pow(15) })).
+                to.be.revertedWith('IncorrectPayment')
+            })
+
+            it("revert is address already claimed",async () => {
+                
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
+                
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
+
+                await lifeOutGenesisDeploy.connect(user1).whiteListMintFirstStage({
+                    value : mintCost
+                })
+
+                await expect(lifeOutGenesisDeploy.connect(user1).
+                whiteListMintFirstStage({value : mintCost })).
+                to.be.revertedWith('AddressAlreadyClaimedFirstStage')
+            })
+
+            it.only("revert if nft first stage is all mint",async () => {
+               
+
+                const { lifeOutGenesisDeploy, owner } = await deploy()
+
+                const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                const numberNftFirstStage : number = await lifeOutGenesisDeploy.getNftFirts()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
+
+                const {arraySigner} = await manySigner(numberNftFirstStage + 1)
+
+                const arrayAddress : string [] = []
+
+                for(let i = 0 ; i < arraySigner.length ; i++){
+                    arrayAddress.push(arraySigner[i].address)
+                    await owner.sendTransaction({to: arraySigner[i].address, value: mintCost.mul(2)});
+                }
+
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)               
+
+                for(let i = 0 ; i < arraySigner.length ; i++){
+                   
+                    await lifeOutGenesisDeploy.connect(arraySigner[i]).whiteListMintFirstStage({
+                        value : mintCost
+                    })
+
+                }
+
+
+            })
+
+            it("claim NFT by address in white list",async () => {
+                                               
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                const currentIdToken : BigNumber = await lifeOutGenesisDeploy.getCurrentTokenId()
+                
+                await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
+                
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
+
+                await expect(lifeOutGenesisDeploy.connect(user1).whiteListMintFirstStage({
+                    value : mintCost
+                })).to.emit(lifeOutGenesisDeploy, 'MintNftFirtsStage')
+                .withArgs(user1.address, currentIdToken)               
+
+                expect(await lifeOutGenesisDeploy.getCurrentTokenId()).to.equals(currentIdToken.add(1))
+
+                expect(await lifeOutGenesisDeploy.isWhiteListFirstStage(user1.address)).to.equals(true)
+
+                expect(await lifeOutGenesisDeploy.ownerOf(currentIdToken)).to.equals(user1.address)
+
+                expect(await lifeOutGenesisDeploy.balanceOf(user1.address)).to.equals(1)
+            })
         })
 
     })
