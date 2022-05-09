@@ -22,20 +22,20 @@ const duration = {
 };
 
 
-async function manySigner(_count : number){
+async function manySigner(_count: number) {
 
-    let arraySigner : Wallet[] = []
+    let arraySigner: Wallet[] = []
 
-    for( let i=0; i < _count; i++){
-        
-        let wallet : Wallet = ethers.Wallet.createRandom();
-        
-        wallet =  wallet.connect(ethers.provider);
-        
-        arraySigner.push(wallet)        
+    for (let i = 0; i < _count; i++) {
+
+        let wallet: Wallet = ethers.Wallet.createRandom();
+
+        wallet = wallet.connect(ethers.provider);
+
+        arraySigner.push(wallet)
     }
 
-    return {arraySigner}
+    return { arraySigner }
 }
 
 const deploy = async () => {
@@ -194,7 +194,7 @@ describe("Life Out Genesis", () => {
 
         describe("change state", () => {
 
-            
+
             it("set first state", async () => {
 
                 const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
@@ -296,12 +296,12 @@ describe("Life Out Genesis", () => {
     })
 
 
-    describe("withdraw Proceeds" , ()=>{
+    describe("withdraw Proceeds", () => {
 
         it("cannot be invoked if you are not the owner of the contract", async () => {
             const { lifeOutGenesisDeploy, user1, user2, user3, user4 } = await deploy()
 
-            const amount : BigNumber = ethers.utils.parseEther("1.0")
+            const amount: BigNumber = ethers.utils.parseEther("1.0")
 
             await user1.sendTransaction({
                 to: lifeOutGenesisDeploy.address,
@@ -320,19 +320,19 @@ describe("Life Out Genesis", () => {
                 value: amount
             });
 
-            const balanceContract : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+            const balanceContract: BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
 
             expect(balanceContract).to.equals(amount.mul(4))
 
             await expect(lifeOutGenesisDeploy.connect(user1).withdrawProceeds()).
-            to.be.revertedWith("Ownable: caller is not the owner")
+                to.be.revertedWith("Ownable: caller is not the owner")
         })
 
-        it("claim the founds only by owner",async () => {
-            
+        it("claim the founds only by owner", async () => {
+
             const { lifeOutGenesisDeploy, owner, user1, user2, user3, user4 } = await deploy()
 
-            const amount : BigNumber = ethers.utils.parseEther("1.0")
+            const amount: BigNumber = ethers.utils.parseEther("1.0")
 
             await user1.sendTransaction({
                 to: lifeOutGenesisDeploy.address,
@@ -351,29 +351,29 @@ describe("Life Out Genesis", () => {
                 value: amount
             });
 
-            const balanceContract : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+            const balanceContract: BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
 
             expect(balanceContract).to.equals(amount.mul(4))
-            
-            const balanceOwnerBefore : BigNumber = await ethers.provider.getBalance(owner.address)
+
+            const balanceOwnerBefore: BigNumber = await ethers.provider.getBalance(owner.address)
 
             const tx = await lifeOutGenesisDeploy.connect(owner).withdrawProceeds()
             const gasUsed: BigNumber = (await tx.wait()).gasUsed
             const gasPrice: BigNumber = tx.gasPrice
             var gasCost: BigNumber = gasUsed.mul(gasPrice)
 
-            const balanceOwnerAfter : BigNumber = await ethers.provider.getBalance(owner.address)
+            const balanceOwnerAfter: BigNumber = await ethers.provider.getBalance(owner.address)
 
             expect(balanceOwnerAfter).to.equals(balanceOwnerBefore.add(balanceContract).sub(gasCost))
             expect(await ethers.provider.getBalance(lifeOutGenesisDeploy.address)).to.equals(ethers.constants.Zero)
-            
+
         })
 
-        it("emit event WithdrawProceeds",async () => {
-            
+        it("emit event WithdrawProceeds", async () => {
+
             const { lifeOutGenesisDeploy, owner, user1, user2, user3, user4 } = await deploy()
 
-            const amount : BigNumber = ethers.utils.parseEther("1.0")
+            const amount: BigNumber = ethers.utils.parseEther("1.0")
 
             await user1.sendTransaction({
                 to: lifeOutGenesisDeploy.address,
@@ -393,229 +393,181 @@ describe("Life Out Genesis", () => {
             });
 
             await expect(lifeOutGenesisDeploy.connect(owner).withdrawProceeds())
-            .to.emit(lifeOutGenesisDeploy, 'WithdrawProceeds')
-            .withArgs(owner.address, amount.mul(4))
+                .to.emit(lifeOutGenesisDeploy, 'WithdrawProceeds')
+                .withArgs(owner.address, amount.mul(4))
         })
 
 
     })
 
-    describe("white list",()=>{
+    describe("white list", () => {
 
-        describe("first stage", ()=>{
+        describe("first stage", () => {
 
-            describe("add white list first stage", ()=>{
+            describe("add white list first stage", () => {
 
                 it("cannot be added to the list if the caller is not the owner", async () => {
-    
+
                     const { lifeOutGenesisDeploy, user1 } = await deploy()
-                   
+
                     await expect(lifeOutGenesisDeploy.connect(user1).addListWhiteListFirstStage([user1.address])).
-                    to.be.revertedWith("Ownable: caller is not the owner")
-    
+                        to.be.revertedWith("Ownable: caller is not the owner")
+
                 })
-    
-                it("insert one address to list by owner",async () => {
-    
+
+                it("insert one address to list by owner", async () => {
+
                     const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
-                   
+
                     await expect(lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address]))
-                    .to.emit(lifeOutGenesisDeploy, 'AddWhiteListFirstStage')
-                    .withArgs(owner.address, user1.address)
-    
-                    const isWhiteListUser1 : boolean = await lifeOutGenesisDeploy.isWhiteListFirstStage(user1.address)
-    
+                        .to.emit(lifeOutGenesisDeploy, 'AddWhiteListFirstStage')
+                        .withArgs(owner.address, user1.address)
+
+                    const isWhiteListUser1: boolean = await lifeOutGenesisDeploy.isWhiteListFirstStage(user1.address)
+
                     expect(isWhiteListUser1).to.equals(true)
-    
+
                 })
-    
-                it("cannot add a list of addresses greater than the number of NFTs available in the stage",async () => {
+
+                it("cannot add a list of addresses greater than the number of NFTs available in the stage", async () => {
                     const { lifeOutGenesisDeploy, owner } = await deploy()
-    
-                    const {arraySigner} = await manySigner(334)
-    
-                    const arrayAddress : string [] = arraySigner.map((x)=>{
+
+                    const { arraySigner } = await manySigner(334)
+
+                    const arrayAddress: string[] = arraySigner.map((x) => {
                         return x.address
                     })
-    
-                    await expect(lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)).
-                    to.be.revertedWith("the number of addresses must be less than the amount of nft of stage")
+
+                    await expect(lifeOutGenesisDeploy.connect(owner).
+                        addListWhiteListFirstStage(arrayAddress)).
+                        to.be.revertedWith('ListToAddInWhiteListFirstIsInvalid')
+
                 })
-    
-                it("insert list address by owner",async () => {
-                   
-                    const { lifeOutGenesisDeploy, owner } = await deploy()
-    
-                    const {arraySigner} = await manySigner(333)
-    
-                    const arrayAddress : string [] = arraySigner.map((x)=>{
+
+                it("cannot add new address if First whitelist  is already full", async () => {
+
+                    const { lifeOutGenesisDeploy, owner, user2 } = await deploy()
+
+                    const { arraySigner } = await manySigner(333)
+
+                    const arrayAddress: string[] = arraySigner.map((x) => {
                         return x.address
                     })
-    
-                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)               
-    
-                    for(let i = 0 ; i < arrayAddress.length ; i++){
+
+                    await lifeOutGenesisDeploy.connect(owner).
+                        addListWhiteListFirstStage(arrayAddress)
+
+                    await expect(lifeOutGenesisDeploy.connect(owner).
+                        addListWhiteListFirstStage([user2.address])).
+                        to.be.revertedWith('WhiteListFirstIsFull')
+                })
+
+                it("insert list address by owner", async () => {
+
+                    const { lifeOutGenesisDeploy, owner } = await deploy()
+
+                    const { arraySigner } = await manySigner(333)
+
+                    const arrayAddress: string[] = arraySigner.map((x) => {
+                        return x.address
+                    })
+
+                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)
+
+                    for (let i = 0; i < arrayAddress.length; i++) {
                         expect(await lifeOutGenesisDeploy.isWhiteListFirstStage(arrayAddress[i])).
-                        to.equals(true)
+                            to.equals(true)
                     }
                 })
             })
 
-            describe("delete white list first stage",() => {
+            describe("delete white list first stage", () => {
 
                 it("only addres only by owner", async () => {
 
                     const { lifeOutGenesisDeploy, user1 } = await deploy()
 
                     await expect(lifeOutGenesisDeploy.connect(user1).deleteListWhiteListFirstStage([user1.address])).
-                    to.be.revertedWith("Ownable: caller is not the owner")
+                        to.be.revertedWith("Ownable: caller is not the owner")
 
-                })                
-
-                // pending for message of error 
-                it("error if address not contains in white list", async () => {
-                    
-                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
-        
-                    await expect(lifeOutGenesisDeploy.connect(owner).deleteListWhiteListFirstStage([user1.address])).
-                    to.be.revertedWith("the address is not in the whitelist")
-                    // const {arraySigner} = await manySigner(10)
-
-                    // const arrayAddress : string [] = arraySigner.map((x)=>{
-                    //     return x.address
-                    // })
-
-                    //await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)               
-                        
                 })
 
-                it("delete one address by owner",async () => {
+                it("error if address not contains in white list", async () => {
+
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                     
+                    await expect(lifeOutGenesisDeploy.connect(owner).
+                    deleteListWhiteListFirstStage([user1.address])).
+                        to.be.revertedWith('IsNotWhiteList')
+
+                })
+
+                it("error is address if already Claimed NFT",async () => {
                     
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                    const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
+
+                    await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
+
+                    await lifeOutGenesisDeploy.connect(user1).whiteListMintFirstStage({
+                        value : mintCost
+                    })
+
+                    await expect(lifeOutGenesisDeploy.connect(owner).
+                    deleteListWhiteListFirstStage([user1.address])).
+                    to.be.revertedWith('AddressAlreadyClaimed')
+                })
+
+                it("delete one address by owner", async () => {
+
                     const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
 
                     await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
-                    
-                    const isWhiteListBefore : boolean = await lifeOutGenesisDeploy.isWhiteListFirstStage(user1.address)
+
+                    const isWhiteListBefore: boolean = await lifeOutGenesisDeploy.isWhiteListFirstStage(user1.address)
 
                     await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListFirstStage([user1.address])
 
-                    const isWhiteListAfter : boolean = await lifeOutGenesisDeploy.isWhiteListFirstStage(user1.address)
+                    const isWhiteListAfter: boolean = await lifeOutGenesisDeploy.isWhiteListFirstStage(user1.address)
 
                     expect(isWhiteListBefore).to.equals(true)
                     expect(isWhiteListAfter).to.equals(false)
 
                 })
 
-                it("delete list address by owner",async () => {
+                it("delete list address by owner", async () => {
 
-                    const numberAddress : number = 333
-                    
+                    const numberAddress: number = 333
+
                     const { lifeOutGenesisDeploy, owner } = await deploy()
 
-                    const {arraySigner} = await manySigner(numberAddress)
-    
-                    const arrayAddress : string [] = arraySigner.map((x)=>{
+                    const { arraySigner } = await manySigner(numberAddress)
+
+                    const arrayAddress: string[] = arraySigner.map((x) => {
                         return x.address
                     })
-    
-                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)   
-                    
+
+                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)
+
                     for (let i = 0; i < arrayAddress.length; i++) {
-                        
+
                         expect(await lifeOutGenesisDeploy.isWhiteListFirstStage(arrayAddress[i])).
-                        to.equals(true)
-                        
+                            to.equals(true)
+
                     }
 
                     await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListFirstStage(arrayAddress)
 
                     for (let i = 0; i < arrayAddress.length; i++) {
-                        
+
                         expect(await lifeOutGenesisDeploy.isWhiteListFirstStage(arrayAddress[i])).
-                        to.equals(false)
-                        
+                            to.equals(false)
+
                     }
 
-
-                })
-
-            })
-
-
-            describe("delete white list Second stage",() => {
-
-                it("only addres only by owner", async () => {
-
-                    const { lifeOutGenesisDeploy, user1 } = await deploy()
-
-                    await expect(lifeOutGenesisDeploy.connect(user1).deleteListWhiteListSecondStage([user1.address])).
-                    to.be.revertedWith("Ownable: caller is not the owner")
-
-                })                
-
-                // pending for message of error 
-                it("error if address not contains in white list", async () => {
-                    
-                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
-        
-                    await expect(lifeOutGenesisDeploy.connect(owner).deleteListWhiteListSecondStage([user1.address])).
-                    to.be.revertedWith("the address is not in the whitelist")
-                    // const {arraySigner} = await manySigner(10)
-
-                    // const arrayAddress : string [] = arraySigner.map((x)=>{
-                    //     return x.address
-                    // })
-
-                    //await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)               
-                        
-                })
-
-                it("delete one address by owner",async () => {
-                    
-                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
-
-                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address])
-                    
-                    const isWhiteListBefore : boolean = await lifeOutGenesisDeploy.isWhiteListSecondStage(user1.address)
-
-                    await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListSecondStage([user1.address])
-
-                    const isWhiteListAfter : boolean = await lifeOutGenesisDeploy.isWhiteListSecondStage(user1.address)
-
-                    expect(isWhiteListBefore).to.equals(true)
-                    expect(isWhiteListAfter).to.equals(false)
-
-                })
-
-                it("delete list address by owner",async () => {
-
-                    const numberAddress : number = 333
-                    
-                    const { lifeOutGenesisDeploy, owner } = await deploy()
-
-                    const {arraySigner} = await manySigner(numberAddress)
-    
-                    const arrayAddress : string [] = arraySigner.map((x)=>{
-                        return x.address
-                    })
-    
-                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage(arrayAddress)   
-                    
-                    for (let i = 0; i < arrayAddress.length; i++) {
-                        
-                        expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(arrayAddress[i])).
-                        to.equals(true)
-                        
-                    }
-
-                    await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListSecondStage(arrayAddress)
-
-                    for (let i = 0; i < arrayAddress.length; i++) {
-                        
-                        expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(arrayAddress[i])).
-                        to.equals(false)
-                        
-                    }
 
                 })
 
@@ -623,95 +575,206 @@ describe("Life Out Genesis", () => {
 
         })
 
-        
-        
+        describe("Second Stage", () => {
 
-        
-        describe("white list second stage", ()=>{
-            
-            it("cannot be added to the list if the caller is not the owner", async () => {
+            describe("add white list Second stage", () => {
 
-                const { lifeOutGenesisDeploy, user1 } = await deploy()
-               
-                await expect(lifeOutGenesisDeploy.connect(user1).addListWhiteListSecondStage([user1.address])).
-                to.be.revertedWith("Ownable: caller is not the owner")
+                it("cannot be added to the list if the caller is not the owner", async () => {
 
-            })
+                    const { lifeOutGenesisDeploy, user1 } = await deploy()
 
-            it("insert one address to list by owner",async () => {
+                    await expect(lifeOutGenesisDeploy.connect(user1).addListWhiteListSecondStage([user1.address])).
+                        to.be.revertedWith("Ownable: caller is not the owner")
 
-                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
-               
-                await expect(lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address]))
-                .to.emit(lifeOutGenesisDeploy, 'AddWhiteListSecondStage')
-                .withArgs(owner.address, user1.address)
-
-                const isWhiteListUser1 : boolean = await lifeOutGenesisDeploy.isWhiteListSecondSatge(user1.address)
-
-                expect(isWhiteListUser1).to.equals(true)
-
-            })
-
-
-            it("cannot add a list of addresses greater than the number of NFTs available in the stage",async () => {
-                const { lifeOutGenesisDeploy, owner } = await deploy()
-
-                const {arraySigner} = await manySigner(334)
-
-                const arrayAddress : string [] = arraySigner.map((x)=>{
-                    return x.address
                 })
 
-                await expect(lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage(arrayAddress)).
-                to.be.revertedWith("the number of addresses must be less than the amount of nft of stage")
-            })
+                it("insert one address to list by owner", async () => {
 
-            it("insert list address by owner",async () => {
-               
-                const { lifeOutGenesisDeploy, owner } = await deploy()
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
 
-                const {arraySigner} = await manySigner(333)
+                    await expect(lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address]))
+                        .to.emit(lifeOutGenesisDeploy, 'AddWhiteListSecondStage')
+                        .withArgs(owner.address, user1.address)
 
-                const arrayAddress : string [] = arraySigner.map((x)=>{
-                    return x.address
+                    const isWhiteListUser1: boolean = await lifeOutGenesisDeploy.isWhiteListSecondStage(user1.address)
+
+                    expect(isWhiteListUser1).to.equals(true)
+
                 })
 
-                await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage(arrayAddress)               
 
-                for(let i = 0 ; i < arrayAddress.length ; i++){
-                    expect(await lifeOutGenesisDeploy.isWhiteListSecondSatge(arrayAddress[i])).
-                    to.equals(true)
-                }
+                it("cannot add a list of addresses greater than the number of NFTs available in the stage", async () => {
+
+                    const { lifeOutGenesisDeploy, owner } = await deploy()
+
+                    const { arraySigner } = await manySigner(334)
+
+                    const arrayAddress: string[] = arraySigner.map((x) => {
+                        return x.address
+                    })
+
+                    await expect(lifeOutGenesisDeploy.connect(owner).
+                        addListWhiteListSecondStage(arrayAddress)).
+                        to.be.revertedWith('ListToAddInWhiteListSecondIsInvalid')
+
+                })
+
+                it("cannot add new address if second whitelist  is already full", async () => {
+
+                    const { lifeOutGenesisDeploy, owner, user2 } = await deploy()
+
+                    const { arraySigner } = await manySigner(333)
+
+                    const arrayAddress: string[] = arraySigner.map((x) => {
+                        return x.address
+                    })
+
+                    await lifeOutGenesisDeploy.connect(owner).
+                        addListWhiteListSecondStage(arrayAddress)
+
+                    await expect(lifeOutGenesisDeploy.connect(owner).
+                        addListWhiteListSecondStage([user2.address])).
+                        to.be.revertedWith('WhiteListSecondIsFull')
+                })
+
+                it("insert list address by owner", async () => {
+
+                    const { lifeOutGenesisDeploy, owner } = await deploy()
+
+                    const { arraySigner } = await manySigner(333)
+
+                    const arrayAddress: string[] = arraySigner.map((x) => {
+                        return x.address
+                    })
+
+                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage(arrayAddress)
+
+                    for (let i = 0; i < arrayAddress.length; i++) {
+                        expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(arrayAddress[i])).
+                            to.equals(true)
+                    }
+                })
+
+
+                describe("delete white list Second stage", () => {
+
+                    it("only addres only by owner", async () => {
+
+                        const { lifeOutGenesisDeploy, user1 } = await deploy()
+
+                        await expect(lifeOutGenesisDeploy.connect(user1).deleteListWhiteListSecondStage([user1.address])).
+                            to.be.revertedWith("Ownable: caller is not the owner")
+
+                    })
+
+                    it("error if address not contains in white list", async () => {
+
+                        const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                        await expect(lifeOutGenesisDeploy.connect(owner).
+                            deleteListWhiteListSecondStage([user1.address])).
+                            to.be.revertedWith('IsNotWhiteList')
+                    })
+
+                    it("error is address if already Claimed NFT",async () => {
+                    
+                        const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+    
+                        const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+    
+                        await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address])
+    
+                        await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
+    
+                        await lifeOutGenesisDeploy.connect(user1).whiteListMintSecondtStage({
+                            value : mintCost
+                        })
+    
+                        await expect(lifeOutGenesisDeploy.connect(owner).
+                        deleteListWhiteListSecondStage([user1.address])).
+                        to.be.revertedWith('AddressAlreadyClaimed')
+                    })
+
+                    it("delete one address by owner", async () => {
+
+                        const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                        await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address])
+
+                        const isWhiteListBefore: boolean = await lifeOutGenesisDeploy.isWhiteListSecondStage(user1.address)
+
+                        await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListSecondStage([user1.address])
+
+                        const isWhiteListAfter: boolean = await lifeOutGenesisDeploy.isWhiteListSecondStage(user1.address)
+
+                        expect(isWhiteListBefore).to.equals(true)
+                        expect(isWhiteListAfter).to.equals(false)
+
+                    })
+
+                    it("delete list address by owner", async () => {
+
+                        const numberAddress: number = 333
+
+                        const { lifeOutGenesisDeploy, owner } = await deploy()
+
+                        const { arraySigner } = await manySigner(numberAddress)
+
+                        const arrayAddress: string[] = arraySigner.map((x) => {
+                            return x.address
+                        })
+
+                        await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage(arrayAddress)
+
+                        for (let i = 0; i < arrayAddress.length; i++) {
+
+                            expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(arrayAddress[i])).
+                                to.equals(true)
+
+                        }
+
+                        await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListSecondStage(arrayAddress)
+
+                        for (let i = 0; i < arrayAddress.length; i++) {
+
+                            expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(arrayAddress[i])).
+                                to.equals(false)
+
+                        }
+
+                    })
+
+                })
             })
         })
     })
 
-    describe("mint Nft",function(){
+    describe("mint Nft", function () {
 
-        this.timeout(5000);
+        this.timeout(0)
 
-        describe.only("first stage", ()=>{
+        
+        describe("First stage", () => {
 
-         
             it("revert first stage is not open", async () => {
-                
+
                 const { lifeOutGenesisDeploy, user1 } = await deploy()
 
                 await expect(lifeOutGenesisDeploy.connect(user1).
-                whiteListMintFirstStage({value : BigNumber.from(1).mul(10).pow(18) })).
-                to.be.revertedWith('StageFirtsNotOpen')
+                    whiteListMintFirstStage({ value: BigNumber.from(1).mul(10).pow(18) })).
+                    to.be.revertedWith('StageNotOpen')
 
             })
 
-            it("revert is address not withe list",async () => {
-                
+            it("revert is address not withe list", async () => {
+
                 const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
 
                 await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
 
                 await expect(lifeOutGenesisDeploy.connect(user1).
-                whiteListMintFirstStage({value : BigNumber.from(1).mul(10).pow(18) })).
-                to.be.revertedWith('AddressIsNotWhitleListFirstStage')
+                    whiteListMintFirstStage({ value: BigNumber.from(1).mul(10).pow(18) })).
+                    to.be.revertedWith('AddressIsNotWhitleList')
 
             })
 
@@ -723,78 +786,51 @@ describe("Life Out Genesis", () => {
                 await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
 
                 await expect(lifeOutGenesisDeploy.connect(user1).
-                whiteListMintFirstStage({value : BigNumber.from(1).mul(10).pow(15) })).
-                to.be.revertedWith('IncorrectPayment')
+                    whiteListMintFirstStage({ value: BigNumber.from(1).mul(10).pow(15) })).
+                    to.be.revertedWith('IncorrectPayment')
             })
 
-            it("revert is address already claimed",async () => {
-                
+            it("revert is address already claimed", async () => {
+
                 const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
 
-                const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
 
                 await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
-                
+
                 await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
 
                 await lifeOutGenesisDeploy.connect(user1).whiteListMintFirstStage({
-                    value : mintCost
+                    value: mintCost
                 })
 
                 await expect(lifeOutGenesisDeploy.connect(user1).
-                whiteListMintFirstStage({value : mintCost })).
-                to.be.revertedWith('AddressAlreadyClaimedFirstStage')
+                    whiteListMintFirstStage({ value: mintCost })).
+                    to.be.revertedWith('AddressAlreadyClaimed')
             })
 
-            it.only("revert if nft first stage is all mint",async () => {
-               
+           
 
-                const { lifeOutGenesisDeploy, owner } = await deploy()
+            it("claim NFT by address in white list", async () => {
 
-                const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
-
-                const numberNftFirstStage : number = await lifeOutGenesisDeploy.getNftFirts()
-
-                await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
-
-                const {arraySigner} = await manySigner(numberNftFirstStage + 1)
-
-                const arrayAddress : string [] = []
-
-                for(let i = 0 ; i < arraySigner.length ; i++){
-                    arrayAddress.push(arraySigner[i].address)
-                    await owner.sendTransaction({to: arraySigner[i].address, value: mintCost.mul(2)});
-                }
-
-                await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)               
-
-                for(let i = 0 ; i < arraySigner.length ; i++){
-                   
-                    await lifeOutGenesisDeploy.connect(arraySigner[i]).whiteListMintFirstStage({
-                        value : mintCost
-                    })
-
-                }
-
-
-            })
-
-            it("claim NFT by address in white list",async () => {
-                                               
                 const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
 
-                const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
 
-                const currentIdToken : BigNumber = await lifeOutGenesisDeploy.getCurrentTokenId()
-                
+                const currentIdToken: BigNumber = await lifeOutGenesisDeploy.getCurrentTokenId()
+
                 await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
-                
+
                 await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
 
+                const balanceContractBefore : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+
                 await expect(lifeOutGenesisDeploy.connect(user1).whiteListMintFirstStage({
-                    value : mintCost
+                    value: mintCost
                 })).to.emit(lifeOutGenesisDeploy, 'MintNftFirtsStage')
-                .withArgs(user1.address, currentIdToken)               
+                    .withArgs(user1.address, currentIdToken)
+
+                const balanceContractAfter : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
 
                 expect(await lifeOutGenesisDeploy.getCurrentTokenId()).to.equals(currentIdToken.add(1))
 
@@ -803,8 +839,211 @@ describe("Life Out Genesis", () => {
                 expect(await lifeOutGenesisDeploy.ownerOf(currentIdToken)).to.equals(user1.address)
 
                 expect(await lifeOutGenesisDeploy.balanceOf(user1.address)).to.equals(1)
+
+                expect(balanceContractAfter).to.equals(balanceContractBefore.add(mintCost))
+            })
+
+            it("claim NFT by address in white list", async () => {
+
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                const numNFtFirstStage : number = 50
+                
+                await lifeOutGenesisDeploy.connect(owner)
+                .setNftFirts(numNFtFirstStage)
+
+                const { arraySigner } = await manySigner(numNFtFirstStage)
+
+                    const arrayAddress: string[] = arraySigner.map((x) => {
+                        return x.address
+                    })
+
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)
+
+                for (let i = 0; i < arrayAddress.length; i++) {
+                    
+                    await user1.sendTransaction({
+                        to: arrayAddress[i],
+                        value: mintCost.mul(2) 
+                    })
+                    
+                }
+
+                const balanceContractBefore : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+
+                await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
+
+                for (let i = 0; i < arraySigner.length; i++) {                                 
+
+                    await expect(lifeOutGenesisDeploy.connect(arraySigner[i]).whiteListMintFirstStage({
+                        value : mintCost}))
+                    .to.emit(lifeOutGenesisDeploy, 'MintNftFirtsStage')
+                    .withArgs(arraySigner[i].address, i+1)
+                    
+                }
+
+                const balanceContractAfter : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+
+                expect(balanceContractAfter).to.equals(balanceContractBefore.add(mintCost).mul(numNFtFirstStage))
+
             })
         })
+
+        describe.only("First stage public sale", () => {
+            it("revert set Public Sale First Stage if caller if not owner",async () => {
+                
+                const { lifeOutGenesisDeploy, user1 } = await deploy()
+
+                await expect(lifeOutGenesisDeploy.connect(user1).setPublicSaleFirstStage(true, 1652218191)).
+                to.be.revertedWith("Ownable: caller is not the owner");
+
+            })
+        })        
+        
+        describe("Second stage", () => {
+
+            it("revert Second stage is not open", async () => {
+
+                const { lifeOutGenesisDeploy, user1 } = await deploy()
+
+                await expect(lifeOutGenesisDeploy.connect(user1).
+                    whiteListMintSecondStage({ value: BigNumber.from(1).mul(10).pow(18) })).
+                    to.be.revertedWith('StageNotOpen')
+
+            })
+
+            it("revert is address not withe list", async () => {
+
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
+
+                await expect(lifeOutGenesisDeploy.connect(user1).
+                whiteListMintSecondStage({ value: BigNumber.from(1).mul(10).pow(18) })).
+                    to.be.revertedWith('AddressIsNotWhitleList')
+
+            })
+
+            it("revert is value send not is equals to mint cost", async () => {
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
+
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address])
+
+                await expect(lifeOutGenesisDeploy.connect(user1).
+                    whiteListMintSecondStage({ value: BigNumber.from(1).mul(10).pow(15) })).
+                    to.be.revertedWith('IncorrectPayment')
+            })
+
+            it("revert is address already claimed", async () => {
+
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
+
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address])
+
+                await lifeOutGenesisDeploy.connect(user1).whiteListMintSecondStage({
+                    value: mintCost
+                })
+
+                await expect(lifeOutGenesisDeploy.connect(user1).
+                    whiteListMintSecondStage({ value: mintCost })).
+                    to.be.revertedWith('AddressAlreadyClaimed')
+            })
+
+           
+
+            it("claim NFT by address in white list", async () => {
+
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                const currentIdToken: BigNumber = await lifeOutGenesisDeploy.getCurrentTokenId()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
+
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address])
+
+                const balanceContractBefore : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+
+                await expect(lifeOutGenesisDeploy.connect(user1).whiteListMintSecondStage({
+                    value: mintCost
+                })).to.emit(lifeOutGenesisDeploy, 'MintNftFirtsStage')
+                    .withArgs(user1.address, currentIdToken)
+
+                const balanceContractAfter : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+
+                expect(await lifeOutGenesisDeploy.getCurrentTokenId()).to.equals(currentIdToken.add(1))
+
+                expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(user1.address)).to.equals(true)
+
+                expect(await lifeOutGenesisDeploy.ownerOf(currentIdToken)).to.equals(user1.address)
+
+                expect(await lifeOutGenesisDeploy.balanceOf(user1.address)).to.equals(1)
+
+                expect(balanceContractAfter).to.equals(balanceContractBefore.add(mintCost))
+            })
+
+            it("claim NFT by address in white list", async () => {
+
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                const numNFtSecondtStage : number = 50
+                
+                await lifeOutGenesisDeploy.connect(owner)
+                .setNftSecond(numNFtSecondtStage)
+
+                const { arraySigner } = await manySigner(numNFtSecondtStage)
+
+                    const arrayAddress: string[] = arraySigner.map((x) => {
+                        return x.address
+                    })
+
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage(arrayAddress)
+
+                for (let i = 0; i < arrayAddress.length; i++) {
+                    
+                    await user1.sendTransaction({
+                        to: arrayAddress[i],
+                        value: mintCost.mul(2) 
+                    })
+                    
+                }
+
+                const balanceContractBefore : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+
+                await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
+
+                for (let i = 0; i < arraySigner.length; i++) {                                 
+
+                    await expect(lifeOutGenesisDeploy.connect(arraySigner[i]).whiteListMintSecondStage({
+                        value : mintCost}))
+                    .to.emit(lifeOutGenesisDeploy, 'MintNftFirtsStage')
+                    .withArgs(arraySigner[i].address, i+1)
+                    
+                }
+
+                const balanceContractAfter : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+
+                expect(balanceContractAfter).to.equals(balanceContractBefore.add(mintCost).mul(numNFtSecondtStage))
+
+            })
+        })
+
+        describe("Second stage public sale", () => {
+
+        })
+
+
 
     })
 
