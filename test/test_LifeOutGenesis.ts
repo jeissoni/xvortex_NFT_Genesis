@@ -1,6 +1,6 @@
 import { ethers } from "hardhat"
 import { expect } from "chai"
-import { BigNumber, Contract, Signer, Wallet } from "ethers"
+import { BigNumber, Contract, providers, Signer, Wallet } from "ethers"
 import { describe } from "mocha"
 
 
@@ -79,13 +79,12 @@ describe("Life Out Genesis", () => {
             expect(await lifeOutGenesisDeploy.isStartFirstStage()).to.equals(false)
             expect(await lifeOutGenesisDeploy.isStartSecondStage()).to.equals(false)
             expect(await lifeOutGenesisDeploy.isStartThirdStage()).to.equals(false)
-            //expect(await lifeOutGenesisDeploy.isStartPublicSale()).to.equals(false)
+            expect(await lifeOutGenesisDeploy.isStartPublicSaleFirstSatge()).to.equals(false)
+            expect(await lifeOutGenesisDeploy.isStartPublicSaleSecondSatge()).to.equals(false)
 
-            expect(await lifeOutGenesisDeploy.getStartPublicSale()).to.equals(ethers.constants.Zero)
-            expect(await lifeOutGenesisDeploy.getEndPublicSale()).to.equals(ethers.constants.Zero)
             expect(ethers.utils.formatEther(mintCost)).to.equals("0.1")
             expect(currentTokenId.toString()).to.equals("1")
-            expect(await lifeOutGenesisDeploy.getNftCount()).to.equals(ethers.constants.Zero)
+            expect(await lifeOutGenesisDeploy.getAvailabeSupply()).to.equals(availableSupply)
             expect(await lifeOutGenesisDeploy.getNftFirts()).to.equals(nftFirst)
             expect(await lifeOutGenesisDeploy.getNftSecond()).to.equals(nftSecond)
             expect(await lifeOutGenesisDeploy.getnftThird()).to.equals(nftThird)
@@ -127,7 +126,7 @@ describe("Life Out Genesis", () => {
 
             //reverse if number is greater than total supply - nft sold
             await expect(lifeOutGenesisDeploy.connect(owner).setNftFirts(1000)).
-                to.be.revertedWith("The new value is not valid");
+                to.be.revertedWith("SetNumberNftInvalid");
 
             await lifeOutGenesisDeploy.connect(owner).setNftFirts(newNumberFirstStage)
 
@@ -152,7 +151,7 @@ describe("Life Out Genesis", () => {
 
             //reverse if number is greater than total supply - nft sold
             await expect(lifeOutGenesisDeploy.connect(owner).setNftSecond(1000)).
-                to.be.revertedWith("The new value is not valid");
+                to.be.revertedWith("SetNumberNftInvalid");
 
             await lifeOutGenesisDeploy.connect(owner).setNftSecond(newNumberStage)
 
@@ -167,6 +166,7 @@ describe("Life Out Genesis", () => {
         })
 
         it("change count NFT Third stage", async () => {
+
             const newNumberStage: number = 400
 
             const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
@@ -177,7 +177,7 @@ describe("Life Out Genesis", () => {
 
             //reverse if number is greater than total supply - nft sold
             await expect(lifeOutGenesisDeploy.connect(owner).setNftThird(1000)).
-                to.be.revertedWith("The new value is not valid");
+                to.be.revertedWith("SetNumberNftInvalid");
 
             await lifeOutGenesisDeploy.connect(owner).setNftThird(newNumberStage)
 
@@ -194,107 +194,134 @@ describe("Life Out Genesis", () => {
 
         describe("change state", () => {
 
+            describe("First state", ()=>{
 
-            it("set first state", async () => {
+                it("set first state", async () => {
 
-                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+    
+                    await expect(lifeOutGenesisDeploy.connect(user1).setStartFirstStage()).
+                        to.be.revertedWith("Ownable: caller is not the owner")
+    
+                    await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
+    
+                    const isStartFirstStage: boolean = await lifeOutGenesisDeploy.isStartFirstStage()
+                    const isStartSecondStage: boolean = await lifeOutGenesisDeploy.isStartSecondStage()
+                    const isStartThirdStage: boolean = await lifeOutGenesisDeploy.isStartThirdStage()
+                    expect(isStartFirstStage).to.equals(true)
+                    expect(isStartSecondStage).to.equals(false)
+                    expect(isStartThirdStage).to.equals(false)
+    
+                    await expect(lifeOutGenesisDeploy.connect(owner).setStartFirstStage())
+                        .to.emit(lifeOutGenesisDeploy, 'SetStartFirstStage')
+                        .withArgs(owner.address)
+                })
 
-                //revert if caller is not owner 
-                await expect(lifeOutGenesisDeploy.connect(user1).setStartFirstStage()).
-                    to.be.revertedWith("Ownable: caller is not the owner")
+                describe("set first stage public sale", ()=>{
 
-                await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
+                    it("revert set Public Sale First Stage if caller if not owner",async () => {
+                
+                        const { lifeOutGenesisDeploy, user1 } = await deploy()
+        
+                        await expect(lifeOutGenesisDeploy.connect(user1).setPublicSaleSecondStage(true, 1652218191)).
+                        to.be.revertedWith("Ownable: caller is not the owner");
+                    })
+        
+                    it("revert id end date is invalided",async () => {
+                        const { lifeOutGenesisDeploy, owner } = await deploy()
+        
+                        const lastBlockTime : BigNumber = await latest()
+        
+                        await expect(lifeOutGenesisDeploy.connect(owner)
+                            .setPublicSaleSecondStage(true, lastBlockTime.sub(1000)))
+                            .to.be.revertedWith('DateInvalid')
+                    })       
+                    
+                })
 
-                const isStartFirstStage: boolean = await lifeOutGenesisDeploy.isStartFirstStage()
-                const isStartSecondStage: boolean = await lifeOutGenesisDeploy.isStartSecondStage()
-                const isStartThirdStage: boolean = await lifeOutGenesisDeploy.isStartThirdStage()
-                expect(isStartFirstStage).to.equals(true)
-                expect(isStartSecondStage).to.equals(false)
-                expect(isStartThirdStage).to.equals(false)
-
-                await expect(lifeOutGenesisDeploy.connect(owner).setStartFirstStage())
-                    .to.emit(lifeOutGenesisDeploy, 'SetStartFirstStage')
-                    .withArgs(owner.address)
             })
 
-            it("set second state", async () => {
+            describe("Second state", ()=>{
+                
+                it("set second state", async () => {
 
-                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+    
+                    await expect(lifeOutGenesisDeploy.connect(user1).setStartSecondStage()).
+                        to.be.revertedWith("Ownable: caller is not the owner")
+    
+                    await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
+    
+                    const isStartFirstStage: boolean = await lifeOutGenesisDeploy.isStartFirstStage()
+                    const isStartSecondStage: boolean = await lifeOutGenesisDeploy.isStartSecondStage()
+                    const isStartThirdStage: boolean = await lifeOutGenesisDeploy.isStartThirdStage()
+                    expect(isStartFirstStage).to.equals(false)
+                    expect(isStartSecondStage).to.equals(true)
+                    expect(isStartThirdStage).to.equals(false)
+    
+                    await expect(lifeOutGenesisDeploy.connect(owner).setStartSecondStage())
+                        .to.emit(lifeOutGenesisDeploy, 'SetStartSecondStage')
+                        .withArgs(owner.address)
+                })
 
-                //revert if caller is not owner 
-                await expect(lifeOutGenesisDeploy.connect(user1).setStartSecondStage()).
-                    to.be.revertedWith("Ownable: caller is not the owner")
+                describe("set second stage public sale", ()=>{
 
-                await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
-
-                const isStartFirstStage: boolean = await lifeOutGenesisDeploy.isStartFirstStage()
-                const isStartSecondStage: boolean = await lifeOutGenesisDeploy.isStartSecondStage()
-                const isStartThirdStage: boolean = await lifeOutGenesisDeploy.isStartThirdStage()
-                expect(isStartFirstStage).to.equals(false)
-                expect(isStartSecondStage).to.equals(true)
-                expect(isStartThirdStage).to.equals(false)
-
-                await expect(lifeOutGenesisDeploy.connect(owner).setStartSecondStage())
-                    .to.emit(lifeOutGenesisDeploy, 'SetStartSecondStage')
-                    .withArgs(owner.address)
+                    it("start Public Sale Second Stage by owner",async () => {
+                        const { lifeOutGenesisDeploy, owner } = await deploy()
+        
+                        const lastBlockTime : BigNumber = await latest()
+                        const state : boolean = true
+        
+                        await expect(lifeOutGenesisDeploy.connect(owner).setPublicSaleSecondStage(
+                            state,
+                            lastBlockTime.mul(5)
+                        )).to.emit(lifeOutGenesisDeploy, 'SetStartPublicSaleSecondStage')
+                            .withArgs(owner.address, state, lastBlockTime.mul(5))
+                    })
+    
+                    it("stop Public Sale Second Satege by owner" ,async () => {
+                        const { lifeOutGenesisDeploy, owner } = await deploy()
+        
+                        const lastBlockTime : BigNumber = await latest()
+                        const state : boolean = false
+        
+                        await expect(lifeOutGenesisDeploy.connect(owner).setPublicSaleSecondStage(
+                            state,
+                            lastBlockTime.mul(5)
+                        )).to.emit(lifeOutGenesisDeploy, 'SetStartPublicSaleSecondStage')
+                            .withArgs(owner.address, state, lastBlockTime.mul(5))
+                    })
+                })
             })
 
-            it("set third state", async () => {
+            describe("Third state", ()=>{
+                
+                it("set third state", async () => {
 
-                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+    
+                    await expect(lifeOutGenesisDeploy.connect(user1).setStartThirdStage()).
+                        to.be.revertedWith("Ownable: caller is not the owner")
+    
+                    await lifeOutGenesisDeploy.connect(owner).setStartThirdStage()
+    
+                    const isStartFirstStage: boolean = await lifeOutGenesisDeploy.isStartFirstStage()
+                    const isStartSecondStage: boolean = await lifeOutGenesisDeploy.isStartSecondStage()
+                    const isStartThirdStage: boolean = await lifeOutGenesisDeploy.isStartThirdStage()
+                    expect(isStartFirstStage).to.equals(false)
+                    expect(isStartSecondStage).to.equals(false)
+                    expect(isStartThirdStage).to.equals(true)
+    
+                    await expect(lifeOutGenesisDeploy.connect(owner).setStartThirdStage())
+                        .to.emit(lifeOutGenesisDeploy, 'SetStartThirdStage')
+                        .withArgs(owner.address)
+                })
 
-                //revert if caller is not owner 
-                await expect(lifeOutGenesisDeploy.connect(user1).setStartThirdStage()).
-                    to.be.revertedWith("Ownable: caller is not the owner")
+            }) 
 
-                await lifeOutGenesisDeploy.connect(owner).setStartThirdStage()
-
-                const isStartFirstStage: boolean = await lifeOutGenesisDeploy.isStartFirstStage()
-                const isStartSecondStage: boolean = await lifeOutGenesisDeploy.isStartSecondStage()
-                const isStartThirdStage: boolean = await lifeOutGenesisDeploy.isStartThirdStage()
-                expect(isStartFirstStage).to.equals(false)
-                expect(isStartSecondStage).to.equals(false)
-                expect(isStartThirdStage).to.equals(true)
-
-                await expect(lifeOutGenesisDeploy.connect(owner).setStartThirdStage())
-                    .to.emit(lifeOutGenesisDeploy, 'SetStartThirdStage')
-                    .withArgs(owner.address)
-            })
-
-            it("set dete public sale", async () => {
-
-                const lastBlockDate: BigNumber = await latest()
-
-                const startDate: BigNumber = lastBlockDate.add(duration.hours(BigNumber.from(1)))
-
-                const endData: BigNumber = lastBlockDate.add(duration.days(BigNumber.from(1)))
-
-                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
-
-                //revert if caller is not owner 
-                await expect(lifeOutGenesisDeploy.connect(user1).setPublicSale(startDate, endData)).
-                    to.be.revertedWith("Ownable: caller is not the owner")
-
-                await expect(lifeOutGenesisDeploy.connect(owner).setPublicSale(0, endData)).
-                    to.be.revertedWith("start time must be greater than current time")
-
-                await expect(lifeOutGenesisDeploy.connect(owner).setPublicSale(startDate, 0)).
-                    to.be.revertedWith("end time must be greater than start time")
-
-                await lifeOutGenesisDeploy.connect(owner).setPublicSale(startDate, endData)
-
-
-                expect(await lifeOutGenesisDeploy.getStartPublicSale()).to.equals(startDate)
-                expect(await lifeOutGenesisDeploy.getEndPublicSale()).to.equals(endData)
-
-                await expect(lifeOutGenesisDeploy.connect(owner).setPublicSale(startDate, endData))
-                    .to.emit(lifeOutGenesisDeploy, 'SetStartPublicSale')
-                    .withArgs(owner.address, startDate, endData)
-            })
         })
 
     })
-
 
     describe("withdraw Proceeds", () => {
 
@@ -686,7 +713,7 @@ describe("Life Out Genesis", () => {
     
                         await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
     
-                        await lifeOutGenesisDeploy.connect(user1).whiteListMintSecondtStage({
+                        await lifeOutGenesisDeploy.connect(user1).whiteListMintSecondStage({
                             value : mintCost
                         })
     
@@ -751,9 +778,6 @@ describe("Life Out Genesis", () => {
 
     describe("mint Nft", function () {
 
-        this.timeout(0)
-
-        
         describe("First stage", () => {
 
             it("revert first stage is not open", async () => {
@@ -827,7 +851,7 @@ describe("Life Out Genesis", () => {
 
                 await expect(lifeOutGenesisDeploy.connect(user1).whiteListMintFirstStage({
                     value: mintCost
-                })).to.emit(lifeOutGenesisDeploy, 'MintNftFirtsStage')
+                })).to.emit(lifeOutGenesisDeploy, 'MintNftFirtStage')
                     .withArgs(user1.address, currentIdToken)
 
                 const balanceContractAfter : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
@@ -879,7 +903,7 @@ describe("Life Out Genesis", () => {
 
                     await expect(lifeOutGenesisDeploy.connect(arraySigner[i]).whiteListMintFirstStage({
                         value : mintCost}))
-                    .to.emit(lifeOutGenesisDeploy, 'MintNftFirtsStage')
+                    .to.emit(lifeOutGenesisDeploy, 'MintNftFirtStage')
                     .withArgs(arraySigner[i].address, i+1)
                     
                 }
@@ -891,15 +915,158 @@ describe("Life Out Genesis", () => {
             })
         })
 
-        describe.only("First stage public sale", () => {
-            it("revert set Public Sale First Stage if caller if not owner",async () => {
-                
-                const { lifeOutGenesisDeploy, user1 } = await deploy()
+        describe("First stage public sale", () => {
+            
+            describe("change states",async () => {
 
-                await expect(lifeOutGenesisDeploy.connect(user1).setPublicSaleFirstStage(true, 1652218191)).
-                to.be.revertedWith("Ownable: caller is not the owner");
+                it("revert set Public Sale First Stage if caller if not owner",async () => {
+                
+                    const { lifeOutGenesisDeploy, user1 } = await deploy()
+    
+                    await expect(lifeOutGenesisDeploy.connect(user1).setPublicSaleFirstStage(true, 1652218191)).
+                    to.be.revertedWith("Ownable: caller is not the owner");
+                })
+    
+                it("revert if end date is invalided",async () => {
+                    const { lifeOutGenesisDeploy, owner } = await deploy()
+    
+                    const lastBlockTime : BigNumber = await latest()
+    
+                    await expect(lifeOutGenesisDeploy.connect(owner).
+                    setPublicSaleFirstStage(true, lastBlockTime.sub(1000))).
+                        to.be.revertedWith('DateInvalid')
+                })
+    
+                it("start Public Sale First Stage by owner",async () => {
+                    const { lifeOutGenesisDeploy, owner } = await deploy()
+    
+                    const lastBlockTime : BigNumber = await latest()
+                    const state : boolean = true
+    
+                    await expect(lifeOutGenesisDeploy.connect(owner).setPublicSaleFirstStage(
+                        state,
+                        lastBlockTime.mul(5)
+                    )).to.emit(lifeOutGenesisDeploy, 'SetStartPublicSaleFirstStage')
+                        .withArgs(owner.address, state, lastBlockTime.mul(5))
+                })
+
+                it("stop Public Sale First Satege by owner" ,async () => {
+                    const { lifeOutGenesisDeploy, owner } = await deploy()
+    
+                    const lastBlockTime : BigNumber = await latest()
+                    const state : boolean = false
+    
+                    await expect(lifeOutGenesisDeploy.connect(owner).setPublicSaleFirstStage(
+                        state,
+                        lastBlockTime.mul(5)
+                    )).to.emit(lifeOutGenesisDeploy, 'SetStartPublicSaleFirstStage')
+                        .withArgs(owner.address, state, lastBlockTime.mul(5))
+                })
+            })
+
+            describe("Mint First stape Public Sale", () => {
+                
+                it("revert if the public sale is not actived", async () => {
+                    const { lifeOutGenesisDeploy, user1 } = await deploy()
+
+                    await expect(lifeOutGenesisDeploy.connect(user1).
+                    firstStagePublicSale()).
+                        to.be.revertedWith('StageNotOpen')
+                })
+
+                it("revert if value send is invalid",async () => {
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    
+                    const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                    
+                    const lastBlockDate : BigNumber = await latest()
+                    const endData: BigNumber = lastBlockDate.add(duration.days(BigNumber.from(1)))
+
+
+                    await lifeOutGenesisDeploy.connect(owner).
+                        setPublicSaleFirstStage(true, endData )
+
+                    await expect(lifeOutGenesisDeploy.connect(user1).
+                        firstStagePublicSale({value:mintCost.sub(1)})).
+                            to.be.revertedWith('IncorrectPayment') 
+                })
+
+                it("revert if time now is greater than time end public sale",async () => {
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    
+                    const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                    
+                    const lastBlockDate : BigNumber = await latest()
+                    const endData: BigNumber = lastBlockDate.add(duration.hours(BigNumber.from(1)))
+
+                    await lifeOutGenesisDeploy.connect(owner).
+                        setPublicSaleFirstStage(true, endData)
+
+                    await ethers.provider.send("evm_increaseTime",
+                        //[(60 * 60 * 24 * 7) + 1] // una semana + 1 segundo
+                        [60 * 60 * 2] //==> 2 horas
+                    )
+
+                    await expect(lifeOutGenesisDeploy.connect(user1).
+                    firstStagePublicSale({value: mintCost})).
+                        to.be.revertedWith('TimePublicSaleOver') 
+                })
+
+                it("revert if all available nft were minted",async () => {
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    
+                    const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                                       
+                    const lastBlockDate : BigNumber = await latest()
+                    const endData: BigNumber = lastBlockDate.add(duration.hours(BigNumber.from(1)))
+
+                    await lifeOutGenesisDeploy.connect(owner).setNftFirts(2)
+                    
+                    await lifeOutGenesisDeploy.connect(owner).
+                        setPublicSaleFirstStage(true, endData)
+                    
+                    for (let i = 0; i < 2; i++) {                        
+                        await lifeOutGenesisDeploy.connect(user1)
+                            .firstStagePublicSale({value : mintCost})                        
+                    }                                                    
+
+                    await expect(lifeOutGenesisDeploy.connect(user1).
+                    firstStagePublicSale({value: mintCost})).
+                        to.be.revertedWith('NftCountExceededStage')                     
+                })
+
+                it("mint all nft available",async () => {
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    
+                    const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                    const numbreNftAvailable : number = 10
+
+                    const lastBlockDate : BigNumber = await latest()
+                    const endData: BigNumber = lastBlockDate.add(duration.hours(BigNumber.from(1)))
+
+                    await lifeOutGenesisDeploy.connect(owner).setNftFirts(numbreNftAvailable)
+                    
+                    await lifeOutGenesisDeploy.connect(owner).
+                        setPublicSaleFirstStage(true, endData)
+
+                    for (let i = 0; i < numbreNftAvailable; i++) {                        
+                     
+                        await expect(lifeOutGenesisDeploy
+                            .connect(user1)
+                            .firstStagePublicSale(
+                            {value : mintCost}
+                        )).to.emit(lifeOutGenesisDeploy, 'MintPublicSaleFirstStage')
+                            .withArgs(user1.address, i+1)
+                    }   
+
+                    await expect(lifeOutGenesisDeploy.connect(user1).
+                        firstStagePublicSale({value: mintCost})).
+                        to.be.revertedWith('NftCountExceededStage')      
+                })
 
             })
+
+            
         })        
         
         describe("Second stage", () => {
@@ -975,7 +1142,7 @@ describe("Life Out Genesis", () => {
 
                 await expect(lifeOutGenesisDeploy.connect(user1).whiteListMintSecondStage({
                     value: mintCost
-                })).to.emit(lifeOutGenesisDeploy, 'MintNftFirtsStage')
+                })).to.emit(lifeOutGenesisDeploy, 'MintNftSecondStage')
                     .withArgs(user1.address, currentIdToken)
 
                 const balanceContractAfter : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
@@ -1027,7 +1194,7 @@ describe("Life Out Genesis", () => {
 
                     await expect(lifeOutGenesisDeploy.connect(arraySigner[i]).whiteListMintSecondStage({
                         value : mintCost}))
-                    .to.emit(lifeOutGenesisDeploy, 'MintNftFirtsStage')
+                    .to.emit(lifeOutGenesisDeploy, 'MintNftSecondStage')
                     .withArgs(arraySigner[i].address, i+1)
                     
                 }
@@ -1039,11 +1206,199 @@ describe("Life Out Genesis", () => {
             })
         })
 
-        describe("Second stage public sale", () => {
+        describe("Second stage public sale", () => {           
+    
+
+            describe("Mint Second stape Public Sale", () => {
+                
+                it("revert if the public sale is not actived", async () => {
+                    const { lifeOutGenesisDeploy, user1 } = await deploy()
+
+                    await expect(lifeOutGenesisDeploy.connect(user1)
+                        .secondStagePublicSale())
+                        .to.be.revertedWith('StageNotOpen')
+                })
+
+                it("revert if value send is invalid",async () => {
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    
+                    const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                    
+                    const lastBlockDate : BigNumber = await latest()
+                    const endData: BigNumber = lastBlockDate.add(duration.days(BigNumber.from(1)))
+
+
+                    await lifeOutGenesisDeploy.connect(owner)
+                        .setPublicSaleSecondStage(true, endData)
+
+                    await expect(lifeOutGenesisDeploy.connect(user1)
+                        .secondStagePublicSale({value:mintCost.sub(1)}))
+                        .to.be.revertedWith('IncorrectPayment') 
+                })
+
+                it("revert if time now is greater than time end public sale",async () => {
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    
+                    const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                    
+                    const lastBlockDate : BigNumber = await latest()
+                    const endData: BigNumber = lastBlockDate.add(duration.hours(BigNumber.from(1)))
+
+                    await lifeOutGenesisDeploy.connect(owner)
+                        .setPublicSaleSecondStage(true, endData)                        
+
+                    await ethers.provider.send("evm_increaseTime",
+                        //[(60 * 60 * 24 * 7) + 1] // una semana + 1 segundo
+                        [60 * 60 * 2] //==> 2 horas
+                    )
+
+                    await expect(lifeOutGenesisDeploy.connect(user1)
+                        .secondStagePublicSale({value: mintCost}))
+                        .to.be.revertedWith('TimePublicSaleOver') 
+                })
+
+                it("revert if all available nft were minted",async () => {
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    
+                    const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                                       
+                    const lastBlockDate : BigNumber = await latest()
+                    const endData: BigNumber = lastBlockDate.add(duration.hours(BigNumber.from(1)))
+
+                    await lifeOutGenesisDeploy.connect(owner).setNftSecond(2)
+                    
+                    await lifeOutGenesisDeploy.connect(owner)
+                        .setPublicSaleSecondStage(true, endData)
+                    
+                    for (let i = 0; i < 2; i++) {                        
+                        await lifeOutGenesisDeploy.connect(user1)
+                            .secondStagePublicSale({value : mintCost})                        
+                    }                                                    
+
+                    await expect(lifeOutGenesisDeploy.connect(user1)
+                        .secondStagePublicSale({value: mintCost}))
+                        .to.be.revertedWith('NftCountExceededStage')                     
+                })
+
+                it("mint all nft available",async () => {
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                    
+                    const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                    const numbreNftAvailable : number = 10
+
+                    const lastBlockDate : BigNumber = await latest()
+                    const endData: BigNumber = lastBlockDate.add(duration.hours(BigNumber.from(1)))
+
+                    await lifeOutGenesisDeploy.connect(owner).setNftSecond(numbreNftAvailable)
+                    
+                    await lifeOutGenesisDeploy.connect(owner)
+                        .setPublicSaleSecondStage(true, endData)
+
+                    const balanceContractBefore : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+
+                    for (let i = 0; i < numbreNftAvailable; i++) {                        
+                     
+                        await expect(lifeOutGenesisDeploy
+                            .connect(user1)
+                            .secondStagePublicSale(
+                            {value : mintCost}
+                        )).to.emit(lifeOutGenesisDeploy, 'MintPublicSaleSecondStage')
+                            .withArgs(user1.address, i+1)
+                    }   
+
+                    await expect(lifeOutGenesisDeploy.connect(user1)
+                        .secondStagePublicSale({value: mintCost}))
+                        .to.be.revertedWith('NftCountExceededStage')  
+                        
+                    const balanceContractAfter : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+                
+                    expect(balanceContractAfter).to.equals(balanceContractBefore.add(mintCost).mul(numbreNftAvailable))
+                })
+
+            })
+
+            
+        })  
+
+        describe("Third stage", ()=>{
+
+            it("revert set Public Sale First Stage if caller if not owner",async () => {
+                
+                const { lifeOutGenesisDeploy, user1 } = await deploy()
+    
+                await expect(lifeOutGenesisDeploy.connect(user1).thirdtStagePublicSale())
+                    .to.be.revertedWith("StageNotOpen");
+            }) 
+            
+            it("revert if value send is invalid",async () => {
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                
+                const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                await lifeOutGenesisDeploy.connect(owner)
+                    .setStartThirdStage()
+
+                await expect(lifeOutGenesisDeploy.connect(user1)
+                    .thirdtStagePublicSale({value:mintCost.sub(1)}))
+                    .to.be.revertedWith('IncorrectPayment') 
+            })
+
+            it("revert if all available nft were minted",async () => {
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                
+                const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                const numbreNftAvailable : number = 2
+                                   
+                await lifeOutGenesisDeploy.connect(owner).setNftThird(numbreNftAvailable)
+                
+                await lifeOutGenesisDeploy.connect(owner)
+                    .setStartThirdStage()
+                
+                for (let i = 0; i < numbreNftAvailable; i++) {                        
+                    await lifeOutGenesisDeploy.connect(user1)
+                        .thirdtStagePublicSale({value : mintCost})                        
+                }                                                    
+
+                await expect(lifeOutGenesisDeploy.connect(user1).
+                thirdtStagePublicSale({value: mintCost})).
+                    to.be.revertedWith('NftCountExceededStage')                     
+            })
+
+            it("mint all nft available",async () => {
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                
+                const mintCost : BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                const numbreNftAvailable : number = 10
+                                   
+                await lifeOutGenesisDeploy.connect(owner).setNftThird(numbreNftAvailable)
+                
+                await lifeOutGenesisDeploy.connect(owner)
+                    .setStartThirdStage()
+
+                const balanceContractBefore : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+                
+                for (let i = 0; i < numbreNftAvailable; i++) {                        
+                  
+                    await expect(lifeOutGenesisDeploy
+                        .connect(user1)
+                        .thirdtStagePublicSale(
+                            {value : mintCost}
+                        )).to.emit(lifeOutGenesisDeploy, 'MintPublicSaleThirdSatge')
+                        .withArgs(user1.address, i+1)
+                }      
+                
+                await expect(lifeOutGenesisDeploy.connect(user1)
+                    .thirdtStagePublicSale({value: mintCost}))
+                    .to.be.revertedWith('NftCountExceededStage')   
+
+                const balanceContractAfter : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+                
+                expect(balanceContractAfter).to.equals(balanceContractBefore.add(mintCost).mul(numbreNftAvailable))
+            })
 
         })
-
-
 
     })
 
