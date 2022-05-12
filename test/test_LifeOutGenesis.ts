@@ -100,7 +100,6 @@ describe("Life Out Genesis", () => {
 
             const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
 
-            //revert if caller is not owner 
             await expect(lifeOutGenesisDeploy.connect(user1).setMintCost(newMintCost)).
                 to.be.revertedWith("Ownable: caller is not the owner");
 
@@ -109,10 +108,7 @@ describe("Life Out Genesis", () => {
             const retunrNewMintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
 
             expect(retunrNewMintCost).to.equals(newMintCost)
-
-            await expect(lifeOutGenesisDeploy.connect(owner).setMintCost(newMintCost))
-                .to.emit(lifeOutGenesisDeploy, 'SetMintCost')
-                .withArgs(owner.address, newMintCost)
+           
         })
 
         it("change count NFT firts stage", async () => {
@@ -133,10 +129,6 @@ describe("Life Out Genesis", () => {
             const retunrNftFirts: BigNumber = await lifeOutGenesisDeploy.getNftFirts()
 
             expect(retunrNftFirts).to.equals(newNumberFirstStage)
-
-            await expect(lifeOutGenesisDeploy.connect(owner).setNftFirts(newNumberFirstStage))
-                .to.emit(lifeOutGenesisDeploy, 'SetNftFirts')
-                .withArgs(owner.address, newNumberFirstStage)
 
         })
 
@@ -159,10 +151,6 @@ describe("Life Out Genesis", () => {
 
             expect(retunrNft).to.equals(newNumberStage)
 
-            await expect(lifeOutGenesisDeploy.connect(owner).setNftSecond(newNumberStage))
-                .to.emit(lifeOutGenesisDeploy, 'SetNftSecond')
-                .withArgs(owner.address, newNumberStage)
-
         })
 
         it("change count NFT Third stage", async () => {
@@ -184,10 +172,7 @@ describe("Life Out Genesis", () => {
             const retunrNft: BigNumber = await lifeOutGenesisDeploy.getnftThird()
 
             expect(retunrNft).to.equals(newNumberStage)
-
-            await expect(lifeOutGenesisDeploy.connect(owner).setNftThird(newNumberStage))
-                .to.emit(lifeOutGenesisDeploy, 'SetNftThird')
-                .withArgs(owner.address, newNumberStage)
+          
 
         })
 
@@ -210,11 +195,8 @@ describe("Life Out Genesis", () => {
                     const isStartThirdStage: boolean = await lifeOutGenesisDeploy.isStartThirdStage()
                     expect(isStartFirstStage).to.equals(true)
                     expect(isStartSecondStage).to.equals(false)
-                    expect(isStartThirdStage).to.equals(false)
-    
-                    await expect(lifeOutGenesisDeploy.connect(owner).setStartFirstStage())
-                        .to.emit(lifeOutGenesisDeploy, 'SetStartFirstStage')
-                        .withArgs(owner.address)
+                    expect(isStartThirdStage).to.equals(false)   
+             
                 })
 
                 describe("set first stage public sale", ()=>{
@@ -259,9 +241,7 @@ describe("Life Out Genesis", () => {
                     expect(isStartSecondStage).to.equals(true)
                     expect(isStartThirdStage).to.equals(false)
     
-                    await expect(lifeOutGenesisDeploy.connect(owner).setStartSecondStage())
-                        .to.emit(lifeOutGenesisDeploy, 'SetStartSecondStage')
-                        .withArgs(owner.address)
+                
                 })
 
                 describe("set second stage public sale", ()=>{
@@ -271,12 +251,15 @@ describe("Life Out Genesis", () => {
         
                         const lastBlockTime : BigNumber = await latest()
                         const state : boolean = true
-        
-                        await expect(lifeOutGenesisDeploy.connect(owner).setPublicSaleSecondStage(
+                        
+                        await lifeOutGenesisDeploy.connect(owner).setPublicSaleSecondStage(
                             state,
                             lastBlockTime.mul(5)
-                        )).to.emit(lifeOutGenesisDeploy, 'SetStartPublicSaleSecondStage')
-                            .withArgs(owner.address, state, lastBlockTime.mul(5))
+                        )
+
+                        const stateAfter : boolean = await lifeOutGenesisDeploy.isStartPublicSaleSecondSatge()
+                        expect(stateAfter).to.equals(state)
+                       
                     })
     
                     it("stop Public Sale Second Satege by owner" ,async () => {
@@ -284,12 +267,14 @@ describe("Life Out Genesis", () => {
         
                         const lastBlockTime : BigNumber = await latest()
                         const state : boolean = false
-        
-                        await expect(lifeOutGenesisDeploy.connect(owner).setPublicSaleSecondStage(
+
+                        await lifeOutGenesisDeploy.connect(owner).setPublicSaleSecondStage(
                             state,
                             lastBlockTime.mul(5)
-                        )).to.emit(lifeOutGenesisDeploy, 'SetStartPublicSaleSecondStage')
-                            .withArgs(owner.address, state, lastBlockTime.mul(5))
+                        )
+
+                        const stateAfter : boolean = await lifeOutGenesisDeploy.isStartPublicSaleSecondSatge()
+                        expect(stateAfter).to.equals(state)
                     })
                 })
             })
@@ -311,10 +296,7 @@ describe("Life Out Genesis", () => {
                     expect(isStartFirstStage).to.equals(false)
                     expect(isStartSecondStage).to.equals(false)
                     expect(isStartThirdStage).to.equals(true)
-    
-                    await expect(lifeOutGenesisDeploy.connect(owner).setStartThirdStage())
-                        .to.emit(lifeOutGenesisDeploy, 'SetStartThirdStage')
-                        .withArgs(owner.address)
+                       
                 })
 
             }) 
@@ -553,15 +535,18 @@ describe("Life Out Genesis", () => {
                     const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
 
                     await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
+                    const addresInWhiteListAfter : BigNumber = await lifeOutGenesisDeploy.getLengtWhiteListFirst()
 
                     const isWhiteListBefore: boolean = await lifeOutGenesisDeploy.isWhiteListFirstStage(user1.address)
 
                     await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListFirstStage([user1.address])
+                    const addresInWhiteListBefore : BigNumber = await lifeOutGenesisDeploy.getLengtWhiteListFirst()
 
                     const isWhiteListAfter: boolean = await lifeOutGenesisDeploy.isWhiteListFirstStage(user1.address)
 
                     expect(isWhiteListBefore).to.equals(true)
                     expect(isWhiteListAfter).to.equals(false)
+                    expect(addresInWhiteListBefore).to.equal(addresInWhiteListAfter.sub(1))
 
                 })
 
@@ -578,6 +563,7 @@ describe("Life Out Genesis", () => {
                     })
 
                     await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage(arrayAddress)
+                    const addresInWhiteListAfter : BigNumber = await lifeOutGenesisDeploy.getLengtWhiteListFirst()
 
                     for (let i = 0; i < arrayAddress.length; i++) {
 
@@ -587,6 +573,7 @@ describe("Life Out Genesis", () => {
                     }
 
                     await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListFirstStage(arrayAddress)
+                    const addresInWhiteListBefore : BigNumber = await lifeOutGenesisDeploy.getLengtWhiteListFirst()
 
                     for (let i = 0; i < arrayAddress.length; i++) {
 
@@ -595,6 +582,7 @@ describe("Life Out Genesis", () => {
 
                     }
 
+                    expect(addresInWhiteListBefore).to.equals(addresInWhiteListAfter.sub(numberAddress))
 
                 })
 
@@ -680,98 +668,104 @@ describe("Life Out Genesis", () => {
                         expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(arrayAddress[i])).
                             to.equals(true)
                     }
+                })                
+            })
+
+            describe("delete white list Second stage", () => {
+
+                it("only addres only by owner", async () => {
+
+                    const { lifeOutGenesisDeploy, user1 } = await deploy()
+
+                    await expect(lifeOutGenesisDeploy.connect(user1).deleteListWhiteListSecondStage([user1.address])).
+                        to.be.revertedWith("Ownable: caller is not the owner")
+
                 })
 
+                it("error if address not contains in white list", async () => {
 
-                describe("delete white list Second stage", () => {
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
 
-                    it("only addres only by owner", async () => {
-
-                        const { lifeOutGenesisDeploy, user1 } = await deploy()
-
-                        await expect(lifeOutGenesisDeploy.connect(user1).deleteListWhiteListSecondStage([user1.address])).
-                            to.be.revertedWith("Ownable: caller is not the owner")
-
-                    })
-
-                    it("error if address not contains in white list", async () => {
-
-                        const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
-
-                        await expect(lifeOutGenesisDeploy.connect(owner).
-                            deleteListWhiteListSecondStage([user1.address])).
-                            to.be.revertedWith('IsNotWhiteList')
-                    })
-
-                    it("error is address if already Claimed NFT",async () => {
-                    
-                        const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
-    
-                        const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
-    
-                        await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address])
-    
-                        await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
-    
-                        await lifeOutGenesisDeploy.connect(user1).whiteListMintSecondStage({
-                            value : mintCost
-                        })
-    
-                        await expect(lifeOutGenesisDeploy.connect(owner).
+                    await expect(lifeOutGenesisDeploy.connect(owner).
                         deleteListWhiteListSecondStage([user1.address])).
-                        to.be.revertedWith('AddressAlreadyClaimed')
+                        to.be.revertedWith('IsNotWhiteList')
+                })
+
+                it("error is address if already Claimed NFT",async () => {
+                
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                    const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address])
+
+                    await lifeOutGenesisDeploy.connect(owner).setStartSecondStage()
+
+                    await lifeOutGenesisDeploy.connect(user1).whiteListMintSecondStage({
+                        value : mintCost
                     })
 
-                    it("delete one address by owner", async () => {
+                    await expect(lifeOutGenesisDeploy.connect(owner).
+                    deleteListWhiteListSecondStage([user1.address])).
+                    to.be.revertedWith('AddressAlreadyClaimed')
+                })
 
-                        const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                it("delete one address by owner", async () => {
 
-                        await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address])
+                    const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
 
-                        const isWhiteListBefore: boolean = await lifeOutGenesisDeploy.isWhiteListSecondStage(user1.address)
+                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage([user1.address])
+                    const addresInWhiteListAfter : BigNumber = await lifeOutGenesisDeploy.getLengtWhiteListSecond()
 
-                        await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListSecondStage([user1.address])
+                    const isWhiteListBefore: boolean = await lifeOutGenesisDeploy.isWhiteListSecondStage(user1.address)
 
-                        const isWhiteListAfter: boolean = await lifeOutGenesisDeploy.isWhiteListSecondStage(user1.address)
+                    await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListSecondStage([user1.address])
+                    const addresInWhiteListBefore : BigNumber = await lifeOutGenesisDeploy.getLengtWhiteListSecond()
 
-                        expect(isWhiteListBefore).to.equals(true)
-                        expect(isWhiteListAfter).to.equals(false)
+                    const isWhiteListAfter: boolean = await lifeOutGenesisDeploy.isWhiteListSecondStage(user1.address)
 
-                    })
-
-                    it("delete list address by owner", async () => {
-
-                        const numberAddress: number = 333
-
-                        const { lifeOutGenesisDeploy, owner } = await deploy()
-
-                        const { arraySigner } = await manySigner(numberAddress)
-
-                        const arrayAddress: string[] = arraySigner.map((x) => {
-                            return x.address
-                        })
-
-                        await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage(arrayAddress)
-
-                        for (let i = 0; i < arrayAddress.length; i++) {
-
-                            expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(arrayAddress[i])).
-                                to.equals(true)
-
-                        }
-
-                        await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListSecondStage(arrayAddress)
-
-                        for (let i = 0; i < arrayAddress.length; i++) {
-
-                            expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(arrayAddress[i])).
-                                to.equals(false)
-
-                        }
-
-                    })
+                    expect(isWhiteListBefore).to.equals(true)
+                    expect(isWhiteListAfter).to.equals(false)
+                    expect(addresInWhiteListBefore).to.equals(addresInWhiteListAfter.sub(1))
 
                 })
+
+                it("delete list address by owner", async () => {
+
+                    const numberAddress: number = 333
+
+                    const { lifeOutGenesisDeploy, owner } = await deploy()
+
+                    const { arraySigner } = await manySigner(numberAddress)
+
+                    const arrayAddress: string[] = arraySigner.map((x) => {
+                        return x.address
+                    })
+
+                    await lifeOutGenesisDeploy.connect(owner).addListWhiteListSecondStage(arrayAddress)
+                    const addresInWhiteListAfter : BigNumber = await lifeOutGenesisDeploy.getLengtWhiteListSecond()
+
+                    for (let i = 0; i < arrayAddress.length; i++) {
+
+                        expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(arrayAddress[i])).
+                            to.equals(true)
+
+                    }
+
+                    await lifeOutGenesisDeploy.connect(owner).deleteListWhiteListSecondStage(arrayAddress)
+                    const addresInWhiteListBefore : BigNumber = await lifeOutGenesisDeploy.getLengtWhiteListSecond()
+
+                    for (let i = 0; i < arrayAddress.length; i++) {
+
+                        expect(await lifeOutGenesisDeploy.isWhiteListSecondStage(arrayAddress[i])).
+                            to.equals(false)
+
+                    }
+
+                    expect(addresInWhiteListBefore).to.equals(addresInWhiteListAfter.sub(numberAddress))
+
+                })
+
             })
         })
     })
@@ -943,11 +937,13 @@ describe("Life Out Genesis", () => {
                     const lastBlockTime : BigNumber = await latest()
                     const state : boolean = true
     
-                    await expect(lifeOutGenesisDeploy.connect(owner).setPublicSaleFirstStage(
+                    await lifeOutGenesisDeploy.connect(owner).setPublicSaleFirstStage(
                         state,
                         lastBlockTime.mul(5)
-                    )).to.emit(lifeOutGenesisDeploy, 'SetStartPublicSaleFirstStage')
-                        .withArgs(owner.address, state, lastBlockTime.mul(5))
+                    )
+
+                    const stateAfter : boolean = await lifeOutGenesisDeploy.isStartPublicSaleFirstSatge()
+                    expect(stateAfter).to.equals(state)
                 })
 
                 it("stop Public Sale First Satege by owner" ,async () => {
@@ -956,11 +952,8 @@ describe("Life Out Genesis", () => {
                     const lastBlockTime : BigNumber = await latest()
                     const state : boolean = false
     
-                    await expect(lifeOutGenesisDeploy.connect(owner).setPublicSaleFirstStage(
-                        state,
-                        lastBlockTime.mul(5)
-                    )).to.emit(lifeOutGenesisDeploy, 'SetStartPublicSaleFirstStage')
-                        .withArgs(owner.address, state, lastBlockTime.mul(5))
+                    const stateAfter : boolean = await lifeOutGenesisDeploy.isStartPublicSaleFirstSatge()
+                    expect(stateAfter).to.equals(state)
                 })
             })
 
@@ -1402,4 +1395,80 @@ describe("Life Out Genesis", () => {
 
     })
 
+    describe.only("data disclosure process", ()=>{
+        
+        it("revert is user call is no owner",async () => {
+
+            const { lifeOutGenesisDeploy, user1 } = await deploy()
+
+            const baseURI :string = "https://gateway.pinata.cloud/ipfs/QmaF13LkMtLJkEMdzqB2DzRN88swjkpapAa939GX8n2doW/1.json"
+
+            await expect(lifeOutGenesisDeploy.connect(user1).setBaseURI(baseURI)).
+            to.be.revertedWith("Ownable: caller is not the owner")
+        })
+
+        it("set baseURI by owner",async () => {
+
+            const { lifeOutGenesisDeploy, owner } = await deploy()
+
+            const baseURI :string = "https://gateway.pinata.cloud/ipfs/QmaF13LkMtLJkEMdzqB2DzRN88swjkpapAa939GX8n2doW/1.json"
+
+            await lifeOutGenesisDeploy.connect(owner).setBaseURI(baseURI)
+
+            const baseURIAfter : string = await lifeOutGenesisDeploy.getBaseURI()
+
+            expect(baseURIAfter).to.equals(baseURI)
+
+        })
+
+        describe("tokenURI", ()=>{
+            it("return base URI is not revelad", async () => {
+
+                const baseURI :string = "https://gateway.pinata.cloud/ipfs/QmaF13LkMtLJkEMdzqB2DzRN88swjkpapAa939GX8n2doW/1.json"
+
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
+
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
+
+                await lifeOutGenesisDeploy.connect(user1).whiteListMintFirstStage({
+                    value: mintCost
+                })
+
+                await lifeOutGenesisDeploy.connect(owner).setBaseURI(baseURI)
+
+                const tokenURI : string = await lifeOutGenesisDeploy.tokenURI(1)
+
+                expect(baseURI).to.equals(tokenURI)
+             
+            })
+
+            it("return token URI if is revelate",async () => {
+                const baseURI :string = "https://gateway.pinata.cloud/ipfs/QmaF13LkMtLJkEMdzqB2DzRN88swjkpapAa939GX8n2doW/"
+
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartFirstStage()
+
+                await lifeOutGenesisDeploy.connect(owner).addListWhiteListFirstStage([user1.address])
+
+                await lifeOutGenesisDeploy.connect(user1).whiteListMintFirstStage({
+                    value: mintCost
+                })
+
+                await lifeOutGenesisDeploy.connect(owner).setBaseURI(baseURI)
+
+                await lifeOutGenesisDeploy.connect(owner).setRevelate(true)
+
+                const tokenURI : string = await lifeOutGenesisDeploy.tokenURI(1)
+
+                expect(baseURI+"1.json").to.equals(tokenURI)
+            })
+        })
+    })
 })
