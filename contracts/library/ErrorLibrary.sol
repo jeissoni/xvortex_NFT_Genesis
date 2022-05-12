@@ -36,4 +36,6 @@ library  Error {
 
     error UnsuccessfulPayout(address owner);
 
+    error NonexistentToken(address user, uint256 tokenId);
+
 }
