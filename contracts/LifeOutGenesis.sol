@@ -236,7 +236,8 @@ contract LifeOutGenesis is ERC721, Ownable {
         revelate = _value;
         //emit SetRevelate(msg.sender, _value);
     }
-    function tokenURI(uint256 tokenId) public view override returns(string memory){
+
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {    
         if (!_exists(tokenId)){
             revert Error.NonexistentToken(msg.sender, tokenId);
         }
