@@ -4,11 +4,8 @@ pragma solidity ^0.8.0;
 
 /// ============ Imports ============
 import "@openzeppelin/contracts/utils/Counters.sol";
-
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol"; 
-
 import "@openzeppelin/contracts/access/Ownable.sol"; 
-
 import { Error } from "../contracts/library/ErrorLibrary.sol";
 
 ///@title LifeOutGenesis
@@ -16,7 +13,6 @@ import { Error } from "../contracts/library/ErrorLibrary.sol";
 contract LifeOutGenesis is ERC721, Ownable {
 
     using Counters for Counters.Counter;
-    //using Strings for uint256;
 
     /// ===========================================
     /// ============ Immutable storage ============
@@ -29,46 +25,23 @@ contract LifeOutGenesis is ERC721, Ownable {
 
     ///@notice string with the base for the tokenURI
     string private baseURI;   
-    bool private revelate;
-
-    bool private startPublicSaleFirstSatge;
-    bool private startPublicSaleSecondSatge;
-
-    uint256 private endDatePublicSaleFirstStage;
-    uint256 private endDatePublicSaleSecondStage;   
+    bool private revelate;  
 
     /// @notice Number of NFTs minted
-    Counters.Counter private tokenIdCounter;
-    uint256 private nftFirts;
-    uint256 private nftSecond;
-    uint256 private nftThird;
+    Counters.Counter private tokenIdCounter;   
 
     /// @notice Cost to mint each NFT (in wei)
     uint256 private mintCost;
-
-    mapping(address => bool) private whiteListFirst;
-    Counters.Counter private lengtWhiteListFirst;
-
-    mapping(address => bool) private whiteListSecond;
-    Counters.Counter private lengtWhiteListSecond;
-
-    mapping(address => bool) private whiteListFirstStageClaimed;
-
-    mapping(address => bool) private whiteListSecondStageClaimed;
-
-    bool private startFirstStage;
-    bool private startSecondStage;
-    bool private startThirdStage;
+    mapping(address => uint256[]) private nftByAddress;
+    uint256 private limitNftByAddress;
     
     /// ======================================================
     /// ============ Constructor =============================
     constructor() ERC721("Life Out Genesis", "LOG") {
-        AVAILABLE_SUPPLY = 999;       
+        AVAILABLE_SUPPLY = 999;  
+        limitNftByAddress = 5;     
         tokenIdCounter.increment();
-        mintCost = 0.1 ether;
-        nftFirts = 333;
-        nftSecond = 333;
-        nftThird = 333;
+        mintCost = 0.1 ether;       
     }
 
     /// ========================================================
@@ -112,45 +85,14 @@ contract LifeOutGenesis is ERC721, Ownable {
     function getCurrentTokenId() external view returns (uint256) {
         return tokenIdCounter.current();
     }   
-    function isStartPublicSaleFirstSatge() external view returns (bool){
-        return startPublicSaleFirstSatge;
-    }
-    function isStartPublicSaleSecondSatge() external view returns (bool){
-        return startPublicSaleSecondSatge;
-    }    
+    
     function getMintCost() external view returns (uint256) {
         return mintCost;
     }  
     function getAvailabeSupply() external view returns (uint256) {
         return AVAILABLE_SUPPLY;
     }
-    function getNftFirts() external view returns (uint256) {
-        return nftFirts;
-    }
-    function getNftSecond() external view returns (uint256) {
-        return nftSecond;
-    }
-    function getnftThird() external view returns (uint256) {
-        return nftThird;
-    }
-    function isWhiteListFirstStage(address _user) external view returns (bool) {
-        return whiteListFirst[_user];
-    }
-    function isWhiteListSecondStage(address _user) external view returns (bool) {
-        return whiteListSecond[_user];
-    }
-    function isWhiteListFirstStageClaimed(address _user) external view returns (bool){
-        return whiteListFirstStageClaimed[_user];
-    }
-    function getLengtWhiteListFirst() external view returns (uint256){
-        return lengtWhiteListFirst.current();
-    }
-    function getLengtWhiteListSecond() external view returns (uint256){
-        return lengtWhiteListSecond.current();
-    }
-    function isWhiteListSecondStageClaimed(address _user) external view returns (bool){
-        return whiteListSecondStageClaimed[_user];
-    }    
+   
     function IsNumberNftInvalid(uint256 _supply) internal view {
         if (_supply > (AVAILABLE_SUPPLY - tokenIdCounter.current())){           
             revert Error.SetNumberNftInvalid(
@@ -158,11 +100,7 @@ contract LifeOutGenesis is ERC721, Ownable {
                 AVAILABLE_SUPPLY - tokenIdCounter.current());
         }
     }
-    function IsDateInvalid(uint256 _endDate) internal view {
-         if(_endDate <  block.timestamp){
-            revert Error.DateInvalid(msg.sender, _endDate);
-        }
-    }
+
     function isValueSendInvalid (uint256 _value, address _sender) internal view {
          if (_value != mintCost) {
             revert Error.IncorrectPayment(_sender, _value, mintCost);
@@ -175,54 +113,8 @@ contract LifeOutGenesis is ERC721, Ownable {
     ///@param _mintCost value price mint
     function setMintCost(uint256 _mintCost) external onlyOwner {
         mintCost = _mintCost;
-        // emit SetMintCost(msg.sender, _mintCost);
     }
-    function setNftFirts(uint256 _supply) external onlyOwner {
-        IsNumberNftInvalid(_supply);        
-        nftFirts = _supply;
-        // emit SetNftFirts(msg.sender, _supply);
-    }
-    function setNftSecond(uint256 _supply) external onlyOwner {
-        IsNumberNftInvalid(_supply); 
-        nftSecond = _supply;
-        // emit SetNftSecond(msg.sender, _supply);
-    }
-    function setNftThird(uint256 _supply) external onlyOwner {
-        IsNumberNftInvalid(_supply); 
-        nftThird = _supply;
-        //emit SetNftThird(msg.sender, _supply);
-    }
-    function setStartFirstStage() external onlyOwner {
-        startFirstStage = true;
-        startSecondStage = false;
-        startThirdStage = false;
-        //emit SetStartFirstStage(msg.sender);
-    }
-    function setStartSecondStage() external onlyOwner {
-        startFirstStage = false;
-        startSecondStage = true;
-        startThirdStage = false;
-        //emit SetStartSecondStage(msg.sender);
-    }
-    function setStartThirdStage() external onlyOwner {
-        startFirstStage = false;
-        startSecondStage = false;
-        startThirdStage = true;
-        //emit SetStartThirdStage(msg.sender);
-    }      
-    function setPublicSaleFirstStage(bool _value,uint256 _endDate) external onlyOwner{      
-        IsDateInvalid(_endDate);
-        startPublicSaleFirstSatge = _value;
-        endDatePublicSaleFirstStage = _endDate;        
-        //emit SetStartPublicSaleFirstStage(msg.sender, _value, _endDate);
-    }
-    function setPublicSaleSecondStage(bool _value, uint256 _endDate) external onlyOwner{
-        IsDateInvalid(_endDate);
-        startPublicSaleSecondSatge = _value;
-        endDatePublicSaleSecondStage = _endDate;        
-        //emit SetStartPublicSaleSecondStage(msg.sender, _value, _endDate);
-    }
-
+   
     //****************************************************** */
     //******************funcition URI ********************** */
    
@@ -230,16 +122,14 @@ contract LifeOutGenesis is ERC721, Ownable {
     ///@param _setBaseUri string whit baseURI
     function setBaseURI(string memory _setBaseUri) external onlyOwner {
         baseURI = _setBaseUri;
-        //emit SetBaseURI(msg.sender, _setBaseUri);
     }
     function setRevelate(bool _value) external onlyOwner{
         revelate = _value;
-        //emit SetRevelate(msg.sender, _value);
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {    
         if (!_exists(tokenId)){
-            revert Error.NonexistentToken(msg.sender, tokenId);
+            revert Error.TokenDoesNotExist(msg.sender, tokenId);
         }
         if(!revelate){
             return baseURI;
@@ -247,235 +137,29 @@ contract LifeOutGenesis is ERC721, Ownable {
         return string(abi.encodePacked(baseURI, Strings.toString(tokenId), ".json"));
     }
     
-    //************************************************ */
-    //*********** add White list **********************/
-    function addWhiteListFirstStage(address _address) internal returns (bool) {
-        whiteListFirst[_address] = true;
-        return true;
-    }
-
-    function addWhiteListSecondStage(address _address) internal returns (bool) {
-        whiteListSecond[_address] = true;
-        return true;
-    }
-
-    ///@notice Add white list for the first phase
-    ///@param _whiteList list of allowed addresses
-    function addListWhiteListFirstStage(address[] calldata _whiteList)
-        external
-        onlyOwner
-    {
-        if(_whiteList.length > nftFirts){
-            revert Error.ListToAddInWhiteListFirstIsInvalid(msg.sender, _whiteList.length , nftFirts);
-        }
-
-        if (lengtWhiteListFirst.current() >= nftFirts) {
-            revert Error.WhiteListFirstIsFull(msg.sender, lengtWhiteListFirst.current(), nftFirts);
-        }
-
-        for (uint i; i < _whiteList.length; i++) {
-            
-            if(!addWhiteListFirstStage(_whiteList[i])){
-                revert Error.FailAddWhiteList(msg.sender, _whiteList[i]);
-            }
-
-            lengtWhiteListFirst.increment();
-            emit AddWhiteListFirstStage(msg.sender, _whiteList[i]);
-        }
-    }
-
-    ///@notice Add white list for the Second phase
-    ///@param _whiteList list of allowed addresses
-    function addListWhiteListSecondStage(address[] calldata _whiteList) external onlyOwner {
-         if(_whiteList.length > nftSecond){
-            revert Error.ListToAddInWhiteListSecondIsInvalid(msg.sender, _whiteList.length , nftSecond);
-        }
-
-        if (lengtWhiteListSecond.current() >= nftSecond) {
-            revert Error.WhiteListSecondIsFull(msg.sender, lengtWhiteListSecond.current(), nftSecond);
-        }
-
-        for (uint i; i < _whiteList.length; i++) {            
-            if(!addWhiteListSecondStage(_whiteList[i])){
-                revert Error.FailAddWhiteList(msg.sender, _whiteList[i]);
-            }
-            lengtWhiteListSecond.increment();
-            emit AddWhiteListSecondStage(msg.sender, _whiteList[i]);
-        }
-    }
-
-    //**************************************************/
-    //*************** delete _whitelist  ***************/
-    function delteWhiteListFirstStage(address _address) internal returns (bool) {
-        whiteListFirst[_address] = false;
-        return true;
-    }
-
-    function delteWhiteListSecondStage(address _address) internal returns (bool) {
-        whiteListSecond[_address] = false;
-        return true;
-    }
-
-    function deleteListWhiteListFirstStage(address[] calldata _whiteList) external onlyOwner {
-        for (uint i; i < _whiteList.length; i++) {
-
-            if(!whiteListFirst[_whiteList[i]]){
-                revert Error.IsNotWhiteList(_whiteList[i]);
-            }
-
-            if(whiteListFirstStageClaimed[_whiteList[i]]){
-                revert Error.AddressAlreadyClaimed(_whiteList[i]);
-            }
-
-            if(!delteWhiteListFirstStage(_whiteList[i])){
-                revert Error.FailDeleteWhiteList(msg.sender, _whiteList[i]);
-            }           
-
-            lengtWhiteListFirst.decrement();
-            emit DeleteWhiteListFirstStage(msg.sender, _whiteList[i]);
-        }
-    }
-
-    function deleteListWhiteListSecondStage(address[] calldata _whiteList) external onlyOwner {
-        for (uint i; i < _whiteList.length; i++) {
-            
-            if(!whiteListSecond[_whiteList[i]]){
-                revert Error.IsNotWhiteList(_whiteList[i]);
-            }
-            if(whiteListSecondStageClaimed[_whiteList[i]]){
-                revert Error.AddressAlreadyClaimed(_whiteList[i]);
-            }
-            if(!delteWhiteListSecondStage(_whiteList[i])){
-                revert Error.FailDeleteWhiteList(msg.sender, _whiteList[i]);
-            }           
-            lengtWhiteListSecond.decrement();
-            emit DeleteWhiteListSecondStage(msg.sender, _whiteList[i]);
-        }
-    }
-
+  
   
     //************************************************* */
     //************** mint function********************* */
     function whiteListMintFirstStage() external payable {
-        if (!startFirstStage) {
-            revert Error.StageNotOpen(msg.sender);
+      
+        if(nftByAddress[msg.sender].length > limitNftByAddress){
+            revert Error.NftLimitAddress(
+                msg.sender,
+                nftByAddress[msg.sender].length,
+                limitNftByAddress);
         }
-        if (!whiteListFirst[msg.sender]) {
-            revert Error.AddressIsNotWhitleList(msg.sender);
-        }
+        
         if (msg.value != mintCost) {
             revert Error.IncorrectPayment(msg.sender, msg.value, mintCost);
         }
-        if (whiteListFirstStageClaimed[msg.sender]) {
-            revert Error.AddressAlreadyClaimed(msg.sender);
-        }
-        if (tokenIdCounter.current() > nftFirts) {
-            revert Error.NftCountExceededStage(
-                msg.sender,
-                tokenIdCounter.current(),
-                nftFirts
-            );
-        }
+        
+        
+        
         // Mint NFT to caller
         _safeMint(msg.sender, tokenIdCounter.current());        
-        whiteListFirstStageClaimed[msg.sender] = true;        
         tokenIdCounter.increment();
         emit MintNftFirtStage(msg.sender, tokenIdCounter.current() - 1);
-    }
-
-      function whiteListMintSecondStage() external payable {
-        
-        if (!startSecondStage) {
-            revert Error.StageNotOpen(msg.sender);
-        }
-        if (!whiteListSecond[msg.sender]) {
-            revert Error.AddressIsNotWhitleList(msg.sender);
-        }
-        if (msg.value != mintCost) {
-            revert Error.IncorrectPayment(msg.sender, msg.value, mintCost);
-        }
-        if (whiteListSecondStageClaimed[msg.sender]) {
-            revert Error.AddressAlreadyClaimed(msg.sender);
-        }
-        if (tokenIdCounter.current() > nftFirts) {
-            revert Error.NftCountExceededStage(
-                msg.sender,
-                tokenIdCounter.current(),
-                nftFirts
-            );
-        }
-        // Mint NFT to caller
-        _safeMint(msg.sender, tokenIdCounter.current());        
-        whiteListSecondStageClaimed[msg.sender] = true;        
-        tokenIdCounter.increment();
-        emit MintNftSecondStage(msg.sender, tokenIdCounter.current() - 1);
-    }   
-
-    function firstStagePublicSale() external payable{
-        if (!startPublicSaleFirstSatge){
-            revert Error.StageNotOpen(msg.sender);
-        }
-        isValueSendInvalid(msg.value, msg.sender);
-        if (block.timestamp > endDatePublicSaleFirstStage){
-            revert Error.TimePublicSaleOver(
-                msg.sender,
-                block.timestamp,
-                endDatePublicSaleFirstStage
-            );
-        }
-        if(tokenIdCounter.current() > nftFirts ){
-            revert Error.NftCountExceededStage(
-                msg.sender,
-                tokenIdCounter.current(),
-                nftFirts
-            );
-        }
-         _safeMint(msg.sender, tokenIdCounter.current());
-         tokenIdCounter.increment();
-         emit MintPublicSaleFirstStage(msg.sender, tokenIdCounter.current() - 1);         
-    }
-
-    function secondStagePublicSale() external payable{
-
-        if (!startPublicSaleSecondSatge){
-            revert Error.StageNotOpen(msg.sender);
-        }
-        isValueSendInvalid(msg.value, msg.sender);        
-        if (block.timestamp > endDatePublicSaleSecondStage){
-            revert Error.TimePublicSaleOver(
-                msg.sender,
-                block.timestamp,
-                endDatePublicSaleSecondStage
-            );
-        }
-        if(tokenIdCounter.current() > nftSecond ){
-            revert Error.NftCountExceededStage(
-                msg.sender,
-                tokenIdCounter.current(),
-                nftSecond
-            );
-        }
-        _safeMint(msg.sender, tokenIdCounter.current());
-        tokenIdCounter.increment();
-        emit MintPublicSaleSecondStage(msg.sender, tokenIdCounter.current() - 1);        
-    }
-
-    function thirdtStagePublicSale() external payable{
-
-        if (!startThirdStage){
-            revert Error.StageNotOpen(msg.sender);
-        }        
-        isValueSendInvalid(msg.value , msg.sender);
-        if(tokenIdCounter.current() > nftThird ){
-            revert Error.NftCountExceededStage(
-                msg.sender,
-                tokenIdCounter.current(),
-                nftThird
-            );
-        }
-        _safeMint(msg.sender, tokenIdCounter.current());
-        tokenIdCounter.increment();
-        emit MintPublicSaleThirdSatge(msg.sender, tokenIdCounter.current() - 1);         
     }
 
     //****************************************************** */
