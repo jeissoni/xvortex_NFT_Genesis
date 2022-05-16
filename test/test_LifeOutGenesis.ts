@@ -305,6 +305,24 @@ describe("Life Out Genesis", () => {
                 )).to.be.revertedWith("IncorrectPayment")
             })
 
+            it("revert if amount nft is invalided" ,async () => {
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartSale(true)
+
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                const getLimitNftByAddress: BigNumber = await lifeOutGenesisDeploy
+                    .getLimitNftByAddress()
+
+                    await expect(lifeOutGenesisDeploy.connect(user1).mintLifeOutGenesis(
+                        getLimitNftByAddress.add(1),
+                        {
+                            value: getLimitNftByAddress.add(1).mul(mintCost)
+                        }
+                    )).to.be.revertedWith("NftLimitAddress")
+            })
+
             
         })
 
