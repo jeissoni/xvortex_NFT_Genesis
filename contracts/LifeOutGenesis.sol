@@ -61,7 +61,7 @@ contract LifeOutGenesis is ERC721, Ownable {
     /// ============ Functions ===============================
    
     //****************************************************** */
-    //********** functions only reed *********************** */
+    //********** functions reed only  *********************** */
 
     function getBaseURI() external view returns(string memory){
         return baseURI;
@@ -74,6 +74,10 @@ contract LifeOutGenesis is ERC721, Ownable {
     }  
     function getAvailabeSupply() external view returns (uint256) {
         return AVAILABLE_SUPPLY;
+    }
+
+    function getLimitNftByAddress() external view returns (uint256){
+        return limitNftByAddress;
     }
 
     function  isStartSale() external view returns (bool) {
@@ -95,7 +99,10 @@ contract LifeOutGenesis is ERC721, Ownable {
 
     function setStartSale(bool _value) external onlyOwner {
         startSale = _value;
+    }
 
+    function setLimitNftByAddress(uint256 _value) external onlyOwner {
+        limitNftByAddress = _value;
     }
    
     //****************************************************** */
@@ -123,17 +130,19 @@ contract LifeOutGenesis is ERC721, Ownable {
   
     //************************************************* */
     //************** mint function********************* */
-    function mintLifeOutGenesis() external payable {
+
+  
+    function mintLifeOutGenesis(uint256 _amountNft) external payable {
 
         if(!startSale){
             revert Error.NotStarSale(msg.sender);
         }
 
-        if (msg.value != mintCost) {
+        if (msg.value != mintCost * _amountNft) {
             revert Error.IncorrectPayment(msg.sender, msg.value, mintCost);
         }
 
-        if(nftByAddress[msg.sender].length > limitNftByAddress){
+        if(_amountNft > limitNftByAddress){
             revert Error.NftLimitAddress(
                 msg.sender,
                 nftByAddress[msg.sender].length,
@@ -142,13 +151,16 @@ contract LifeOutGenesis is ERC721, Ownable {
 
         if(tokenIdCounter.current() > AVAILABLE_SUPPLY){
             revert Error.NftSoldOut(msg.sender);
-        }             
-        
-        // Mint NFT to caller
-        nftByAddress[msg.sender].push(tokenIdCounter.current());
-        _safeMint(msg.sender, tokenIdCounter.current());        
-        tokenIdCounter.increment();
-        emit MintLifeOutGenesis(msg.sender, tokenIdCounter.current() - 1);
+        }           
+
+        for(uint i; i < _amountNft ; i++){
+            // Mint NFT to caller
+            nftByAddress[msg.sender].push(tokenIdCounter.current());
+            _safeMint(msg.sender, tokenIdCounter.current());        
+            tokenIdCounter.increment();
+            emit MintLifeOutGenesis(msg.sender, tokenIdCounter.current() - 1);
+        }          
+   
     }
 
     //****************************************************** */
