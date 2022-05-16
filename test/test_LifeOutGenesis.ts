@@ -54,16 +54,13 @@ const deploy = async () => {
 }
 
 
-describe("Life Out Genesis", () => {
+describe.only("Life Out Genesis", () => {
 
     describe("Deploy smart contract", () => {
 
         it("initial parameters", async () => {
 
             const availableSupply: number = 999
-            const nftFirst: number = 333
-            const nftSecond: number = 333
-            const nftThird: number = 333
 
             const nameNft: string = "Life Out Genesis"
             const symbol: string = "LOG"
@@ -76,19 +73,12 @@ describe("Life Out Genesis", () => {
             expect(await lifeOutGenesisDeploy.symbol()).to.equals(symbol)
             expect(await lifeOutGenesisDeploy.owner()).to.equals(owner.address)
             expect(await lifeOutGenesisDeploy.getAvailabeSupply()).to.equals(availableSupply)
-            expect(await lifeOutGenesisDeploy.isStartFirstStage()).to.equals(false)
-            expect(await lifeOutGenesisDeploy.isStartSecondStage()).to.equals(false)
-            expect(await lifeOutGenesisDeploy.isStartThirdStage()).to.equals(false)
-            expect(await lifeOutGenesisDeploy.isStartPublicSaleFirstSatge()).to.equals(false)
-            expect(await lifeOutGenesisDeploy.isStartPublicSaleSecondSatge()).to.equals(false)
+            expect(await lifeOutGenesisDeploy.isStartSale()).to.equals(false)            
 
-            expect(ethers.utils.formatEther(mintCost)).to.equals("0.1")
+            expect(ethers.utils.formatEther(mintCost)).to.equals("0.3")
             expect(currentTokenId.toString()).to.equals("1")
             expect(await lifeOutGenesisDeploy.getAvailabeSupply()).to.equals(availableSupply)
-            expect(await lifeOutGenesisDeploy.getNftFirts()).to.equals(nftFirst)
-            expect(await lifeOutGenesisDeploy.getNftSecond()).to.equals(nftSecond)
-            expect(await lifeOutGenesisDeploy.getnftThird()).to.equals(nftThird)
-
+     
         })
     })
 
@@ -1395,7 +1385,7 @@ describe("Life Out Genesis", () => {
 
     })
 
-    describe.only("data disclosure process", ()=>{
+    describe("data disclosure process", ()=>{
         
         it("revert is user call is no owner",async () => {
 

@@ -34,6 +34,7 @@ contract LifeOutGenesis is ERC721, Ownable {
     uint256 private mintCost;
     mapping(address => uint256[]) private nftByAddress;
     uint256 private limitNftByAddress;
+    bool private startSale;
     
     /// ======================================================
     /// ============ Constructor =============================
@@ -41,7 +42,7 @@ contract LifeOutGenesis is ERC721, Ownable {
         AVAILABLE_SUPPLY = 999;  
         limitNftByAddress = 5;     
         tokenIdCounter.increment();
-        mintCost = 0.1 ether;       
+        mintCost = 0.3 ether;       
     }
 
     /// ========================================================
@@ -49,29 +50,12 @@ contract LifeOutGenesis is ERC721, Ownable {
 
     event WithdrawProceeds(address indexed owner, uint256 balance);
 
-    event DeleteWhiteListThirdStage(address indexed user);    
-
     event Received(address indexed user, uint256 amount);
 
-    event MintNftFirtStage(address indexed user, uint256 tokenId);
+    event MintLifeOutGenesis(address indexed user, uint256 tokenId);
 
-    event MintNftSecondStage(address indexed user, uint256 tokenId);
-
-    event MintNftThirdStage(address indexed user, uint256 tokenId);
-
-    event MintPublicSaleFirstStage(address indexed user, uint256 tokenId);
-
-    event MintPublicSaleSecondStage(address indexed user, uint256 tokenId);
-
-    event MintPublicSaleThirdSatge(address indexed user, uint256 tokenId);
-
-    event AddWhiteListFirstStage(address indexed owner, address indexed user);
-
-    event AddWhiteListSecondStage(address indexed owner, address indexed user);
-
-    event DeleteWhiteListFirstStage(address indexed owner,address indexed user);
-
-    event DeleteWhiteListSecondStage(address indexed owner,address indexed user);
+    event SetStartSale(address indexed owner, bool value);
+   
 
     /// ======================================================
     /// ============ Functions ===============================
@@ -84,23 +68,17 @@ contract LifeOutGenesis is ERC721, Ownable {
     }
     function getCurrentTokenId() external view returns (uint256) {
         return tokenIdCounter.current();
-    }   
-    
+    }       
     function getMintCost() external view returns (uint256) {
         return mintCost;
     }  
     function getAvailabeSupply() external view returns (uint256) {
         return AVAILABLE_SUPPLY;
     }
-   
-    function IsNumberNftInvalid(uint256 _supply) internal view {
-        if (_supply > (AVAILABLE_SUPPLY - tokenIdCounter.current())){           
-            revert Error.SetNumberNftInvalid(
-                msg.sender, _supply, 
-                AVAILABLE_SUPPLY - tokenIdCounter.current());
-        }
-    }
 
+    function  isStartSale() external view returns (bool) {
+        return startSale;
+    }
     function isValueSendInvalid (uint256 _value, address _sender) internal view {
          if (_value != mintCost) {
             revert Error.IncorrectPayment(_sender, _value, mintCost);
@@ -113,6 +91,11 @@ contract LifeOutGenesis is ERC721, Ownable {
     ///@param _mintCost value price mint
     function setMintCost(uint256 _mintCost) external onlyOwner {
         mintCost = _mintCost;
+    }
+
+    function setStartSale(bool _value) external onlyOwner {
+        startSale = _value;
+
     }
    
     //****************************************************** */
@@ -136,30 +119,36 @@ contract LifeOutGenesis is ERC721, Ownable {
         }
         return string(abi.encodePacked(baseURI, Strings.toString(tokenId), ".json"));
     }
-    
-  
+      
   
     //************************************************* */
     //************** mint function********************* */
-    function whiteListMintFirstStage() external payable {
-      
+    function mintLifeOutGenesis() external payable {
+
+        if(!startSale){
+            revert Error.NotStarSale(msg.sender);
+        }
+
+        if (msg.value != mintCost) {
+            revert Error.IncorrectPayment(msg.sender, msg.value, mintCost);
+        }
+
         if(nftByAddress[msg.sender].length > limitNftByAddress){
             revert Error.NftLimitAddress(
                 msg.sender,
                 nftByAddress[msg.sender].length,
                 limitNftByAddress);
         }
-        
-        if (msg.value != mintCost) {
-            revert Error.IncorrectPayment(msg.sender, msg.value, mintCost);
-        }
-        
-        
+
+        if(tokenIdCounter.current() > AVAILABLE_SUPPLY){
+            revert Error.NftSoldOut(msg.sender);
+        }             
         
         // Mint NFT to caller
+        nftByAddress[msg.sender].push(tokenIdCounter.current());
         _safeMint(msg.sender, tokenIdCounter.current());        
         tokenIdCounter.increment();
-        emit MintNftFirtStage(msg.sender, tokenIdCounter.current() - 1);
+        emit MintLifeOutGenesis(msg.sender, tokenIdCounter.current() - 1);
     }
 
     //****************************************************** */
