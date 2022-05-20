@@ -305,8 +305,8 @@ describe("Life Out Genesis", () => {
                 )).to.be.revertedWith("IncorrectPayment")
             })
 
-            it("revert if amount nft is invalided" ,async () => {
-                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+            it.only("revert if amount nft is invalided" ,async () => {
+                const { lifeOutGenesisDeploy, owner, user1, user2 } = await deploy()
 
                 await lifeOutGenesisDeploy.connect(owner).setStartSale(true)
 
@@ -321,6 +321,49 @@ describe("Life Out Genesis", () => {
                             value: getLimitNftByAddress.add(1).mul(mintCost)
                         }
                     )).to.be.revertedWith("NftLimitAddress")
+
+                    await lifeOutGenesisDeploy.connect(user1)
+                        .mintLifeOutGenesis(
+                            getLimitNftByAddress.sub(1),
+                            {value : getLimitNftByAddress.sub(1).mul(mintCost)}
+                        )
+                    await expect(lifeOutGenesisDeploy.connect(user1)
+                        .mintLifeOutGenesis(
+                        getLimitNftByAddress,
+                            {
+                                value: getLimitNftByAddress.mul(mintCost)
+                            }
+                        )).to.be.revertedWith("NftLimitAddress")
+            })
+
+            it("revert if nft is all sold", async () => {
+                const { lifeOutGenesisDeploy,owner, user1 } = await deploy()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartSale(true)
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+                const availableSupply : BigNumber = await lifeOutGenesisDeploy.getAvailabeSupply()
+                const numberUser : string = ethers.utils.formatEther(availableSupply)
+                
+                const { arraySigner } = await manySigner(10)
+
+                for(let i = 0 ; i < arraySigner.length ; i++){                   
+                    await owner.sendTransaction({to: arraySigner[i].address, value: mintCost.mul(2)});
+                }
+               
+                for(let i = 0 ; i < arraySigner.length ; i++){
+                    await lifeOutGenesisDeploy.connect(arraySigner[i]).mintLifeOutGenesis(
+                        1,
+                        {
+                            value : mintCost
+                        })
+                }
+                
+                await expect(lifeOutGenesisDeploy.connect(user1).mintLifeOutGenesis(
+                    1,
+                    {
+                        value: mintCost
+                    }
+                )).to.be.revertedWith("NftSoldOut")
             })
 
             
