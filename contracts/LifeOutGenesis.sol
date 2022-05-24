@@ -42,7 +42,7 @@ contract LifeOutGenesis is ERC721, Ownable {
         AVAILABLE_SUPPLY = 999;  
         limitNftByAddress = 5;     
         tokenIdCounter.increment();
-        mintCost = 0.003 ether;       
+        mintCost = 0.3 ether;       
     }
 
     /// ========================================================
@@ -75,12 +75,13 @@ contract LifeOutGenesis is ERC721, Ownable {
     function getAvailabeSupply() external view returns (uint256) {
         return AVAILABLE_SUPPLY;
     }
-
     function getLimitNftByAddress() external view returns (uint256){
         return limitNftByAddress;
     }
-
-    function  isStartSale() external view returns (bool) {
+    function isRevelated() external view returns (bool){
+        return revelate;
+    }
+    function isStartSale() external view returns (bool) {
         return startSale;
     }
     function isValueSendInvalid (uint256 _value, address _sender) internal view {
@@ -125,12 +126,10 @@ contract LifeOutGenesis is ERC721, Ownable {
             return baseURI;
         }
         return string(abi.encodePacked(baseURI, Strings.toString(tokenId), ".json"));
-    }
+    }    
       
-  
     //************************************************* */
-    //************** mint function********************* */
-  
+    //************** mint function********************* */  
     function mintLifeOutGenesis(uint256 _amountNft) external payable {
 
         if(!startSale){
