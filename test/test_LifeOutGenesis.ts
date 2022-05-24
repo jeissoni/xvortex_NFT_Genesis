@@ -266,7 +266,21 @@ describe("Life Out Genesis", () => {
                     }
                 )).
                     to.be.revertedWith("NotStarSale")
+            })
 
+            it("revert if amount is max value",async () => {
+                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+
+                const maxUint : BigNumber = ethers.constants.MaxUint256 
+                const mintCost: BigNumber = await lifeOutGenesisDeploy.getMintCost()
+
+                await lifeOutGenesisDeploy.connect(owner).setStartSale(true)
+
+                await expect (lifeOutGenesisDeploy.connect(user1).mintLifeOutGenesis(maxUint,
+                    {
+                        value: mintCost.sub(1)                
+                    }
+                )).to.be.revertedWith("")
             })
 
             it("revert if value send is incorrect", async () => {
@@ -282,8 +296,7 @@ describe("Life Out Genesis", () => {
                     {
                         value: mintCost.sub(1)
                     }
-                )).
-                    to.be.revertedWith("IncorrectPayment")
+                )).to.be.reverted
 
             })
 
@@ -305,7 +318,7 @@ describe("Life Out Genesis", () => {
                 )).to.be.revertedWith("IncorrectPayment")
             })
 
-            it.only("revert if amount nft is invalided" ,async () => {
+            it("revert if amount nft is invalided" ,async () => {
                 const { lifeOutGenesisDeploy, owner, user1, user2 } = await deploy()
 
                 await lifeOutGenesisDeploy.connect(owner).setStartSale(true)
