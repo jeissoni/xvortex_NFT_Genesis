@@ -5,23 +5,6 @@ import { describe } from "mocha"
 
 
 
-async function latest() {
-    const blockNumBefore: number = await ethers.provider.getBlockNumber();
-    const blockBefore = await ethers.provider.getBlock(blockNumBefore);
-    const timestampBefore: BigNumber = BigNumber.from(blockBefore.timestamp);
-    return (timestampBefore);
-}
-
-const duration = {
-    seconds: function (val: BigNumber) { return (BigNumber.from(val)); },
-    minutes: function (val: BigNumber) { return val.mul(this.seconds(BigNumber.from(60))) },
-    hours: function (val: BigNumber) { return val.mul(this.minutes(BigNumber.from(60))) },
-    days: function (val: BigNumber) { return val.mul(this.hours(BigNumber.from(24))) },
-    weeks: function (val: BigNumber) { return val.mul(this.days(BigNumber.from(7))) },
-    years: function (val: BigNumber) { return val.mul(this.days(BigNumber.from(365))) },
-};
-
-
 async function manySigner(_count: number) {
 
     let arraySigner: Wallet[] = []
@@ -89,7 +72,7 @@ describe("Life Out Genesis", () => {
             it("revert if caller is not owner", async () => {
                 const newMintCost: BigNumber = ethers.utils.parseEther("0.2")
 
-                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                const { lifeOutGenesisDeploy, user1 } = await deploy()
 
                 await expect(lifeOutGenesisDeploy.connect(user1).setMintCost(newMintCost)).
                     to.be.revertedWith("Ownable: caller is not the owner");
@@ -99,7 +82,7 @@ describe("Life Out Genesis", () => {
 
                 const newMintCost: BigNumber = ethers.utils.parseEther("0.2")
 
-                const { lifeOutGenesisDeploy, owner, user1 } = await deploy()
+                const { lifeOutGenesisDeploy, owner } = await deploy()
 
                 await lifeOutGenesisDeploy.connect(owner).setMintCost(newMintCost)
 
@@ -490,5 +473,41 @@ describe("Life Out Genesis", () => {
                 expect(baseURI + "1.json").to.equals(tokenURI)
             })
         })
+    })
+
+    describe.only("Ownership", () => {
+
+        describe("renounce",()=>{
+            it("renounce ownership only owner", async () => {
+                const { lifeOutGenesisDeploy, user1 } = await deploy()
+            
+                await expect(lifeOutGenesisDeploy.connect(user1).renounceOwnership()).
+                    to.be.revertedWith("Ownable: caller is not the owner");
+            })
+
+            it("renounce ownership",async () => {
+                const { lifeOutGenesisDeploy, owner } = await deploy()
+
+                await lifeOutGenesisDeploy.connect(owner).renounceOwnership()
+            })
+        })
+
+        describe("tranfer", ()=>{
+            it("tranfer call only by owner",async () => {
+                const { lifeOutGenesisDeploy, user1 } = await deploy()
+
+                await expect(lifeOutGenesisDeploy.connect(user1).transferOwnership(user1.address)).
+                    to.be.revertedWith("Ownable: caller is not the owner");
+            })
+
+            it("tranfer by owner", async () => {
+                const { lifeOutGenesisDeploy,owner,user1 } = await deploy()
+
+                await expect(lifeOutGenesisDeploy.connect(owner).transferOwnership(user1.address))
+                    .to.emit(lifeOutGenesisDeploy, "OwnershipTransferred")
+                    .withArgs(owner.address, user1.address);
+            })
+        })
+        
     })
 })
