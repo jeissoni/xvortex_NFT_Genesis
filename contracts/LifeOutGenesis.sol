@@ -92,20 +92,10 @@ contract LifeOutGenesis is ERC721, Ownable {
 
     //****************************************************** */
     // ************* functions set parameter *************** */
-    ///@notice Allows set price mint by owner
-    ///@param _mintCost value price mint
-    function setMintCost(uint256 _mintCost) external onlyOwner {
-        mintCost = _mintCost;
-    }
-
     function setStartSale(bool _value) external onlyOwner {
         startSale = _value;
     }
 
-    function setLimitNftByAddress(uint256 _value) external onlyOwner {
-        limitNftByAddress = _value;
-    }
-   
     //****************************************************** */
     //******************funcition URI ********************** */
    
@@ -175,7 +165,5 @@ contract LifeOutGenesis is ERC721, Ownable {
     //**************** Fallback Functions ******************* */
     receive() external payable {
         emit Received(msg.sender, msg.value);
-    }
-
-   
+    }   
 }
