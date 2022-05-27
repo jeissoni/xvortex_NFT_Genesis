@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
+//@audit establecer una versión de solidity
 
+//@audit hay muchas variables private con getter, si no se hereda de este contrato podrían hacerse public
+//@audit los nombres de los errores tienen algunos errores de tipeo
 
 /// ============ Imports ============
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -24,17 +27,20 @@ contract LifeOutGenesis is ERC721, Ownable {
     /// ============ Mutable storage ==============  
 
     ///@notice string with the base for the tokenURI
-    string private baseURI;   
+    string public baseURI;   
     bool private revelate;  
 
     /// @notice Number of NFTs minted
     Counters.Counter private tokenIdCounter;   
 
     /// @notice Cost to mint each NFT (in wei)
-    uint256 private mintCost;
+    uint256 public mintCost;
     mapping(address => uint256[]) private nftByAddress;
-    uint256 private limitNftByAddress;
-    bool private startSale;
+    uint256 public limitNftByAddress;
+    bool public startSale;
+
+    bool internal locked;
+
     
     /// ======================================================
     /// ============ Constructor =============================
@@ -52,48 +58,38 @@ contract LifeOutGenesis is ERC721, Ownable {
 
     event Received(address indexed user, uint256 amount);
 
-    event MintLifeOutGenesis(address indexed user, uint256 tokenId);
+    event MintLifeOutGenesis(address indexed user, uint256 tokenId); 
 
-    event SetStartSale(address indexed owner, bool value);
-   
+    event SetStartSale(address indexed owner, uint256 date);
 
-    /// ======================================================
-    /// ============ Functions ===============================
-   
-    //****************************************************** */
-    //********** functions reed only  *********************** */
 
-    function getBaseURI() external view returns(string memory){
-        return baseURI;
+    /// =========================================================
+    /// =========== modifier ====================================
+    modifier reentrancyGuard() {
+        require(!locked);
+            locked = true;
+        _ ;
+        locked = false;
     }
+
+    /// =========================================================
+    /// ============ Functions ==================================
+   
+    //******************************************************* */
+    //********** functions reed only  *********************** */  
     function getCurrentTokenId() external view returns (uint256) {
         return tokenIdCounter.current();
-    }       
-    function getMintCost() external view returns (uint256) {
-        return mintCost;
-    }  
-    function getAvailabeSupply() external view returns (uint256) {
+    }        
+    function getAvailableSupply() external view returns (uint256) {
         return AVAILABLE_SUPPLY;
     }
-    function getLimitNftByAddress() external view returns (uint256){
-        return limitNftByAddress;
-    }
-    function isRevelated() external view returns (bool){
-        return revelate;
-    }
-    function isStartSale() external view returns (bool) {
-        return startSale;
-    }
-    function isValueSendInvalid (uint256 _value, address _sender) internal view {
-         if (_value != mintCost) {
-            revert Error.IncorrectPayment(_sender, _value, mintCost);
-        }  
-    }
+  
 
     //****************************************************** */
-    // ************* functions set parameter *************** */
+    // ************* functions set parameter *************** */ 
     function setStartSale(bool _value) external onlyOwner {
         startSale = _value;
+        emit SetStartSale(msg.sender, block.timestamp);
     }
 
     //****************************************************** */
@@ -108,7 +104,8 @@ contract LifeOutGenesis is ERC721, Ownable {
         revelate = _value;
     }
 
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {    
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {   
+        //@audit de acuerdo a la función mintLifeOutGenesis todos los tokenId son consecutivos
         if (!_exists(tokenId)){
             revert Error.TokenDoesNotExist(msg.sender, tokenId);
         }
@@ -116,11 +113,12 @@ contract LifeOutGenesis is ERC721, Ownable {
             return baseURI;
         }
         return string(abi.encodePacked(baseURI, Strings.toString(tokenId), ".json"));
-    }    
+    }
       
+  
     //************************************************* */
     //************** mint function********************* */  
-    function mintLifeOutGenesis(uint256 _amountNft) external payable {
+    function mintLifeOutGenesis(uint256 _amountNft) reentrancyGuard external payable {
 
         if(!startSale){
             revert Error.NotStarSale(msg.sender);
@@ -130,6 +128,8 @@ contract LifeOutGenesis is ERC721, Ownable {
             revert Error.IncorrectPayment(msg.sender, msg.value, mintCost);
         }
 
+        //@audit esto hace que cada address pueda mintear como máximo limitNftByAddress pero cada vez que se llama a la función
+        //@audit nada me impide llamar nuevamente a la función y mintear limitNftByAddress nuevamente
         if(_amountNft > (limitNftByAddress - nftByAddress[msg.sender].length)){
             revert Error.NftLimitAddress(
                 msg.sender,
@@ -143,7 +143,10 @@ contract LifeOutGenesis is ERC721, Ownable {
 
         for(uint i; i < _amountNft ; i++){
             // Mint NFT to caller
+            //@audit para qué sirve el mapping nftByAddress? acá se sobreescribe en cada ciclo del for (esto es caro en cuanto a gas)
             nftByAddress[msg.sender].push(tokenIdCounter.current());
+            //@audit hay reentrancy acá. _safeMint() llama a _checkOnERC721Received() y dado que tokenIdCounter se incrementa después de esta línea
+            //@audit pueden mintearse más que el AVAILABLE_SUPPLY. Usar check-effects-interactions
             _safeMint(msg.sender, tokenIdCounter.current());        
             tokenIdCounter.increment();
             emit MintLifeOutGenesis(msg.sender, tokenIdCounter.current() - 1);
@@ -154,16 +157,10 @@ contract LifeOutGenesis is ERC721, Ownable {
     //****************************************************** */
     //***************** withdraw function******************* */
     function withdrawProceeds() external onlyOwner {
-        uint256 balace = address(this).balance;        
-        if (balace == 0){ revert Error.NotFondsToTranfer(msg.sender);}        
-        (bool sent, ) = payable(msg.sender).call{value: balace}("");
+        uint256 balance = address(this).balance;        
+        if (balance == 0){ revert Error.NotFondsToTranfer(msg.sender);}        
+        (bool sent, ) = payable(msg.sender).call{value: balance}("");
         if (!sent){revert Error.UnsuccessfulPayout(msg.sender);}        
-        emit WithdrawProceeds(msg.sender, balace);
-    }
-
-    //******************************************************* */
-    //**************** Fallback Functions ******************* */
-    receive() external payable {
-        emit Received(msg.sender, msg.value);
-    }   
+        emit WithdrawProceeds(msg.sender, balance);
+    }    
 }
