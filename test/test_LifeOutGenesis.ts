@@ -1,6 +1,6 @@
 import { ethers } from "hardhat"
 import { expect } from "chai"
-import { BigNumber, Contract, providers, Signer, Wallet } from "ethers"
+import { BigNumber, Contract, Wallet } from "ethers"
 import { describe } from "mocha"
 
 
@@ -145,7 +145,7 @@ describe("Life Out Genesis", () => {
                         value: mintCost
                     }
                 )).
-                    to.be.revertedWith("NotStarSale")
+                    to.be.revertedWith("SaleNotStarted")
             })
 
             it("revert if amount is max value",async () => {
@@ -214,7 +214,7 @@ describe("Life Out Genesis", () => {
                         {
                             value: getLimitNftByAddress.add(1).mul(mintCost)
                         }
-                    )).to.be.revertedWith("NftLimitAddress")
+                    )).to.be.revertedWith("NftLimitPerDirection")
 
                 await lifeOutGenesisDeploy.connect(user1)
                         .mintLifeOutGenesis(
@@ -228,7 +228,7 @@ describe("Life Out Genesis", () => {
                             {
                                 value: getLimitNftByAddress.mul(mintCost)
                             }
-                        )).to.be.revertedWith("NftLimitAddress")
+                        )).to.be.revertedWith("NftLimitPerDirection")
             })
 
             it("revert if nft is all sold", async () => {
