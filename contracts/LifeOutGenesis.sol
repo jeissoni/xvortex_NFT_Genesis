@@ -35,12 +35,8 @@ contract LifeOutGenesis is ERC721, Ownable {
 
     /// @notice Cost to mint each NFT (in wei)
     uint256 public mintCost;
-    mapping(address => uint256[]) private nftByAddress;
     uint256 public limitNftByAddress;
     bool public startSale;
-
-    bool internal locked;
-
     
     /// ======================================================
     /// ============ Constructor =============================
@@ -61,17 +57,7 @@ contract LifeOutGenesis is ERC721, Ownable {
     event MintLifeOutGenesis(address indexed user, uint256 tokenId); 
 
     event SetStartSale(address indexed owner, uint256 date);
-
-
-    /// =========================================================
-    /// =========== modifier ====================================
-    modifier reentrancyGuard() {
-        require(!locked);
-            locked = true;
-        _ ;
-        locked = false;
-    }
-
+   
     /// =========================================================
     /// ============ Functions ==================================
    
@@ -118,10 +104,10 @@ contract LifeOutGenesis is ERC721, Ownable {
   
     //************************************************* */
     //************** mint function********************* */  
-    function mintLifeOutGenesis(uint256 _amountNft) reentrancyGuard external payable {
+    function mintLifeOutGenesis(uint256 _amountNft) external payable {
 
         if(!startSale){
-            revert Error.NotStarSale(msg.sender);
+            revert Error.SaleNotStarted(msg.sender);
         }
 
         if (msg.value != mintCost * _amountNft) {
@@ -130,10 +116,10 @@ contract LifeOutGenesis is ERC721, Ownable {
 
         //@audit esto hace que cada address pueda mintear como máximo limitNftByAddress pero cada vez que se llama a la función
         //@audit nada me impide llamar nuevamente a la función y mintear limitNftByAddress nuevamente
-        if(_amountNft > (limitNftByAddress - nftByAddress[msg.sender].length)){
-            revert Error.NftLimitAddress(
+        if(_amountNft > (limitNftByAddress - balanceOf(msg.sender))){
+            revert Error.NftLimitPerDirection(
                 msg.sender,
-                nftByAddress[msg.sender].length,
+                balanceOf(msg.sender),
                 limitNftByAddress);
         }
 
@@ -144,7 +130,7 @@ contract LifeOutGenesis is ERC721, Ownable {
         for(uint i; i < _amountNft ; i++){
             // Mint NFT to caller
             //@audit para qué sirve el mapping nftByAddress? acá se sobreescribe en cada ciclo del for (esto es caro en cuanto a gas)
-            nftByAddress[msg.sender].push(tokenIdCounter.current());
+            //nftByAddress[msg.sender].push(tokenIdCounter.current());
             //@audit hay reentrancy acá. _safeMint() llama a _checkOnERC721Received() y dado que tokenIdCounter se incrementa después de esta línea
             //@audit pueden mintearse más que el AVAILABLE_SUPPLY. Usar check-effects-interactions
             _safeMint(msg.sender, tokenIdCounter.current());        
