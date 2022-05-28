@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 library  Error {
     
-    error NftLimitAddress(address user, uint256 available, uint256 required); 
+    error NftLimitPerDirection(address user, uint256 available, uint256 required); 
 
     error IncorrectPayment(address user, uint256 available, uint256 required);
    
@@ -12,7 +12,7 @@ library  Error {
 
     error TokenDoesNotExist(address user, uint256 tokenId);
 
-    error NotStarSale(address user);
+    error SaleNotStarted(address user);
 
     error NftSoldOut(address user);
 
