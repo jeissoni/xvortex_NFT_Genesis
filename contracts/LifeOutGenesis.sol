@@ -121,11 +121,7 @@ contract LifeOutGenesis is ERC721, Ownable {
                 msg.sender,
                 balanceOf(msg.sender),
                 limitNftByAddress);
-        }
-
-        if(tokenIdCounter.current() > AVAILABLE_SUPPLY){
-            revert Error.NftSoldOut(msg.sender);
-        }           
+        }                
 
         for(uint i; i < _amountNft ; i++){
             // Mint NFT to caller
@@ -133,6 +129,9 @@ contract LifeOutGenesis is ERC721, Ownable {
             //nftByAddress[msg.sender].push(tokenIdCounter.current());
             //@audit hay reentrancy acá. _safeMint() llama a _checkOnERC721Received() y dado que tokenIdCounter se incrementa después de esta línea
             //@audit pueden mintearse más que el AVAILABLE_SUPPLY. Usar check-effects-interactions
+            if(tokenIdCounter.current() > AVAILABLE_SUPPLY){
+                revert Error.NftSoldOut(msg.sender);
+            }   
             _safeMint(msg.sender, tokenIdCounter.current());        
             tokenIdCounter.increment();
             emit MintLifeOutGenesis(msg.sender, tokenIdCounter.current() - 1);
