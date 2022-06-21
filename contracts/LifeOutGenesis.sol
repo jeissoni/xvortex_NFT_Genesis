@@ -1,99 +1,131 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.4;
-//@audit establecer una versión de solidity
-
-//@audit hay muchas variables private con getter, si no se hereda de este contrato podrían hacerse public
-//@audit los nombres de los errores tienen algunos errores de tipeo
 
 /// ============ Imports ============
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol"; 
 import "@openzeppelin/contracts/access/Ownable.sol"; 
-import { Error } from "../contracts/library/ErrorLibrary.sol";
 
 ///@title LifeOutGenesis
-///@author jeissoni
+///@notice Token ERC721 for the life Out 
 contract LifeOutGenesis is ERC721, Ownable {
+    ///============================================
+    ///============= Errors =======================
+    
+    ///@notice NFT per address limit exceeded
+    ///@param user Caller address 
+    ///@param balanceOf User NFT balance
+    error NftLimitPerDirection(address user, uint256 balanceOf); 
 
-    using Counters for Counters.Counter;
+    ///@notice The sent value of ETH is not correct to make the purchase
+    ///@param user Caller address 
+    ///@param amountSent Amount sent by the user 
+    error IncorrectPayment(address user, uint256 amountSent);
+   
+    ///@notice No funds to transfer
+    ///@param owner Caller address
+    error NotFondsToTranfer(address owner);
+
+    ///@notice Error transferring funds to account
+    ///@param owner Caller address
+    error UnsuccessfulPayout(address owner);
+
+    ///@notice Invoked token number does not exist    
+    error TokenDoesNotExist();
+    
+    ///@notice The sale not started
+    ///@param user Caller address
+    error SaleNotStarted(address user);
+
+    ///@notice No token available for sale
+    ///@param user Caller address
+    error NftSoldOut(address user);
 
     /// ===========================================
     /// ============ Immutable storage ============
-
     /// @notice Available NFT supply
-    uint256 private immutable AVAILABLE_SUPPLY;
+    uint256 public immutable AVAILABLE_SUPPLY;
 
     /// ===========================================
     /// ============ Mutable storage ==============  
+    ///@notice Type of variable used for handling numeric sequences
+    using Counters for Counters.Counter;
 
-    ///@notice string with the base for the tokenURI
+    ///@notice String with the base for the tokenURI
     string public baseURI;   
-    bool private revelate;  
+
+    ///@notice Used to know if the goal is revealed or not
+    bool public revelate;  
 
     /// @notice Number of NFTs minted
-    Counters.Counter private tokenIdCounter;   
+    Counters.Counter public tokenIdCounter;   
 
     /// @notice Cost to mint each NFT (in wei)
     uint256 public mintCost;
+
+    ///@notice Maximum number of nft to buy per address
     uint256 public limitNftByAddress;
+
+    ///@notice used to know if the sale of NFT has started
     bool public startSale;
     
     /// ======================================================
     /// ============ Constructor =============================
     constructor() ERC721("Life Out Genesis", "LOG") {
         AVAILABLE_SUPPLY = 999;  
-        limitNftByAddress = 5;     
+        limitNftByAddress = 3;     
         tokenIdCounter.increment();
-        mintCost = 0.3 ether;       
+        mintCost = 0.3 ether;    
+        baseURI = "ipfs://QmVy37A4BSoBjz3AMgZCaSE2JZMGoNuo4LebP7pZTSUBMT";   
     }
 
     /// ========================================================
     /// ============= Event ====================================
+    /// @notice Emitted after a successful Withdraw Proceeds
+    /// @param owner Address of owner 
+    /// @param amount Amount of proceeds claimed by owner
+    event WithdrawProceeds(address indexed owner, uint256 amount );
 
-    event WithdrawProceeds(address indexed owner, uint256 balance);
-
-    event Received(address indexed user, uint256 amount);
-
+    /// @notice Emitted after a successful Mint Nft
+    /// @param user Address of the user Mint
+    /// @param tokenId Number token Mint
     event MintLifeOutGenesis(address indexed user, uint256 tokenId); 
 
+    /// @notice Emitted after a successful change starSale variable
+    /// @param owner Address of owner
+    /// @param date Date when change 
     event SetStartSale(address indexed owner, uint256 date);
    
     /// =========================================================
     /// ============ Functions ==================================
-   
-    //******************************************************* */
-    //********** functions reed only  *********************** */  
-    function getCurrentTokenId() external view returns (uint256) {
-        return tokenIdCounter.current();
-    }        
-    function getAvailableSupply() external view returns (uint256) {
-        return AVAILABLE_SUPPLY;
-    }
   
 
     //****************************************************** */
-    // ************* functions set parameter *************** */ 
-    function setStartSale(bool _value) external onlyOwner {
-        startSale = _value;
+    // ************* functions set parameter *************** */
+    ///@notice start public sale
+    ///@param value value in bowling for sale
+    function setStartSale(bool value) external onlyOwner {
+        startSale = value;
         emit SetStartSale(msg.sender, block.timestamp);
     }
-
-    //****************************************************** */
-    //******************funcition URI ********************** */
-   
+  
     ///@notice Sets baseURI of NFT
-    ///@param _setBaseUri string whit baseURI
-    function setBaseURI(string memory _setBaseUri) external onlyOwner {
-        baseURI = _setBaseUri;
-    }
-    function setRevelate(bool _value) external onlyOwner{
-        revelate = _value;
+    ///@param setBaseUri string whit baseURI
+    function setBaseURI(string memory setBaseUri) external onlyOwner {
+        baseURI = setBaseUri;
     }
 
+    ///@notice start the sale of NFTs
+    ///@param value boolean value for sale
+    function setRevelate(bool value) external onlyOwner{
+        revelate = value;
+    }
+
+    ///@notice return tokenURI for each token
+    ///@param tokenId the id of the token you want the tokenURI
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {   
-        //@audit de acuerdo a la función mintLifeOutGenesis todos los tokenId son consecutivos
         if (!_exists(tokenId)){
-            revert Error.TokenDoesNotExist(msg.sender, tokenId);
+            revert TokenDoesNotExist();
         }
         if(!revelate){
             return baseURI;
@@ -104,33 +136,29 @@ contract LifeOutGenesis is ERC721, Ownable {
   
     //************************************************* */
     //************** mint function********************* */  
-    function mintLifeOutGenesis(uint256 _amountNft) external payable {
+    ///@notice buy from NFT
+    ///@param amountNft number of NFTs you want to buy
+    function mintLifeOutGenesis(uint256 amountNft) external payable {
 
         if(!startSale){
-            revert Error.SaleNotStarted(msg.sender);
+            revert SaleNotStarted(msg.sender);
         }
 
-        if (msg.value != mintCost * _amountNft) {
-            revert Error.IncorrectPayment(msg.sender, msg.value, mintCost);
+        if (msg.value != mintCost * amountNft) {
+            revert IncorrectPayment(msg.sender, msg.value);
         }
 
-        //@audit esto hace que cada address pueda mintear como máximo limitNftByAddress pero cada vez que se llama a la función
-        //@audit nada me impide llamar nuevamente a la función y mintear limitNftByAddress nuevamente
-        if(_amountNft > (limitNftByAddress - balanceOf(msg.sender))){
-            revert Error.NftLimitPerDirection(
+        if(amountNft > (limitNftByAddress - balanceOf(msg.sender))){
+            revert NftLimitPerDirection(
                 msg.sender,
-                balanceOf(msg.sender),
-                limitNftByAddress);
+                balanceOf(msg.sender));
+                
         }                
 
-        for(uint i; i < _amountNft ; i++){
-            // Mint NFT to caller
-            //@audit para qué sirve el mapping nftByAddress? acá se sobreescribe en cada ciclo del for (esto es caro en cuanto a gas)
-            //nftByAddress[msg.sender].push(tokenIdCounter.current());
-            //@audit hay reentrancy acá. _safeMint() llama a _checkOnERC721Received() y dado que tokenIdCounter se incrementa después de esta línea
-            //@audit pueden mintearse más que el AVAILABLE_SUPPLY. Usar check-effects-interactions
+        for(uint i; i < amountNft ; i++){
+            
             if(tokenIdCounter.current() > AVAILABLE_SUPPLY){
-                revert Error.NftSoldOut(msg.sender);
+                revert NftSoldOut(msg.sender);
             }   
             _safeMint(msg.sender, tokenIdCounter.current());        
             tokenIdCounter.increment();
@@ -141,11 +169,12 @@ contract LifeOutGenesis is ERC721, Ownable {
 
     //****************************************************** */
     //***************** withdraw function******************* */
+    ///@notice withdraw funds by owner
     function withdrawProceeds() external onlyOwner {
         uint256 balance = address(this).balance;        
-        if (balance == 0){ revert Error.NotFondsToTranfer(msg.sender);}        
+        if (balance == 0){ revert NotFondsToTranfer(msg.sender);}        
         (bool sent, ) = payable(msg.sender).call{value: balance}("");
-        if (!sent){revert Error.UnsuccessfulPayout(msg.sender);}        
+        if (!sent){revert UnsuccessfulPayout(msg.sender);}        
         emit WithdrawProceeds(msg.sender, balance);
     }    
 }
