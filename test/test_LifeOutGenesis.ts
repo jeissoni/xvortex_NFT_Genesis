@@ -50,17 +50,16 @@ describe("Life Out Genesis", () => {
             const { lifeOutGenesisDeploy, owner } = await deploy()
 
             const mintCost: BigNumber = await lifeOutGenesisDeploy.mintCost()
-            const currentTokenId: BigNumber = await lifeOutGenesisDeploy.getCurrentTokenId()
+            const currentTokenId: BigNumber = await lifeOutGenesisDeploy.tokenIdCounter()
 
             expect(await lifeOutGenesisDeploy.name()).to.equals(nameNft)
             expect(await lifeOutGenesisDeploy.symbol()).to.equals(symbol)
             expect(await lifeOutGenesisDeploy.owner()).to.equals(owner.address)
-            expect(await lifeOutGenesisDeploy.getAvailableSupply()).to.equals(availableSupply)
+            expect(await lifeOutGenesisDeploy.AVAILABLE_SUPPLY()).to.equals(availableSupply)
             expect(await lifeOutGenesisDeploy.startSale()).to.equals(false)
 
             expect(ethers.utils.formatEther(mintCost)).to.equals("0.3")
             expect(currentTokenId.toString()).to.equals("1")
-            expect(await lifeOutGenesisDeploy.getAvailableSupply()).to.equals(availableSupply)
 
         })
     })
@@ -99,33 +98,78 @@ describe("Life Out Genesis", () => {
 
     describe("withdraw Proceeds", () => {       
 
-        // it("emit event WithdrawProceeds", async () => {
+        it("revert if caller is not owner",async () => {
+            const { lifeOutGenesisDeploy, owner , user1 } = await deploy()
 
-        //     const { lifeOutGenesisDeploy, owner, user1, user2, user3, user4 } = await deploy()
+            await lifeOutGenesisDeploy.connect(owner).setStartSale(true)
 
-        //     const amount: BigNumber = ethers.utils.parseEther("1.0")
+            const mintCost: BigNumber = await lifeOutGenesisDeploy.mintCost()
+            const getLimitNftByAddress: BigNumber = await lifeOutGenesisDeploy
+                .limitNftByAddress()
 
-        //     await user1.sendTransaction({
-        //         to: lifeOutGenesisDeploy.address,
-        //         value: amount
-        //     });
-        //     await user2.sendTransaction({
-        //         to: lifeOutGenesisDeploy.address,
-        //         value: amount
-        //     });
-        //     await user3.sendTransaction({
-        //         to: lifeOutGenesisDeploy.address,
-        //         value: amount
-        //     });
-        //     await user4.sendTransaction({
-        //         to: lifeOutGenesisDeploy.address,
-        //         value: amount
-        //     });
+            await lifeOutGenesisDeploy.connect(user1).mintLifeOutGenesis(
+                getLimitNftByAddress,
+                {
+                    value : mintCost.mul(getLimitNftByAddress)
+                }
+            )
 
-        //     await expect(lifeOutGenesisDeploy.connect(owner).withdrawProceeds())
-        //         .to.emit(lifeOutGenesisDeploy, 'WithdrawProceeds')
-        //         .withArgs(owner.address, amount.mul(4))
-        // })
+            await expect(lifeOutGenesisDeploy.connect(user1).withdrawProceeds()).
+                to.be.revertedWith("Ownable: caller is not the owner");
+        })
+
+        it("transfer funds to owners", async () => {
+
+            const { lifeOutGenesisDeploy, owner, user1, user2, user3, user4 } = await deploy()
+
+            await lifeOutGenesisDeploy.connect(owner).setStartSale(true)
+
+            const mintCost: BigNumber = await lifeOutGenesisDeploy.mintCost()
+            const getLimitNftByAddress: BigNumber = await lifeOutGenesisDeploy
+                .limitNftByAddress()
+
+            await lifeOutGenesisDeploy.connect(user1).mintLifeOutGenesis(
+                getLimitNftByAddress,
+                {
+                    value : mintCost.mul(getLimitNftByAddress)
+                }
+            )
+            await lifeOutGenesisDeploy.connect(user2).mintLifeOutGenesis(
+                getLimitNftByAddress,
+                {
+                    value : mintCost.mul(getLimitNftByAddress)
+                }
+            )
+            await lifeOutGenesisDeploy.connect(user3).mintLifeOutGenesis(
+                getLimitNftByAddress,
+                {
+                    value : mintCost.mul(getLimitNftByAddress)
+                }
+            )
+            await lifeOutGenesisDeploy.connect(user4).mintLifeOutGenesis(
+                getLimitNftByAddress,
+                {
+                    value : mintCost.mul(getLimitNftByAddress)
+                }
+            )
+
+            const gain : BigNumber =  mintCost.mul(getLimitNftByAddress.mul(4))
+
+            const balaceBeforeOwner : BigNumber = await ethers.provider.getBalance(owner.address)
+
+            var tx = await lifeOutGenesisDeploy.connect(owner).withdrawProceeds()      
+            
+            const gasUsed: BigNumber = (await tx.wait()).gasUsed            
+            const gasPrice: BigNumber = tx.gasPrice            
+            var gasCost: BigNumber = gasUsed.mul(gasPrice)
+
+            const balaceAfterOwner : BigNumber = await ethers.provider.getBalance(owner.address)
+            const balaceAfterContract : BigNumber = await ethers.provider.getBalance(lifeOutGenesisDeploy.address)
+                      
+            expect(balaceAfterOwner).to.equals(balaceBeforeOwner.add(gain).sub(gasCost))
+            expect(balaceAfterContract).to.equals(0)
+
+        })
 
     })
 
@@ -282,13 +326,13 @@ describe("Life Out Genesis", () => {
 
             const balanceOfNft : BigNumber = await lifeOutGenesisDeploy.balanceOf(user1.address)
 
-            const currentIdToken : BigNumber = await lifeOutGenesisDeploy.getCurrentTokenId()
+            const currentIdToken : BigNumber = await lifeOutGenesisDeploy.tokenIdCounter()
 
             expect(balanceOfNft).to.equals(getLimitNftByAddress)
 
             expect(balanceContract).to.equals(mintCost.mul(getLimitNftByAddress))
             
-            expect(currentIdToken.sub(1)).to.equals(5)
+            expect(currentIdToken.sub(1)).to.equals(3)
 
         })
 
