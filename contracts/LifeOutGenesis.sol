@@ -8,7 +8,61 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 ///@title LifeOutGenesis
 ///@notice Token ERC721 for the life Out 
-contract LifeOutGenesis is ERC721, Ownable {
+contract LifeOutGenesis is ERC721, Ownable {   
+
+    /// ===========================================
+    /// ============ Immutable storage ============
+    /// @notice Available NFT supply
+    uint256 public constant AVAILABLE_SUPPLY = 999;
+
+    /// @notice Cost to mint each NFT 
+    uint256 public constant MINT_COST = 0.3 ether;
+
+    ///@notice Maximum number of nft to buy per address
+    uint256 public constant LIMIT_NFT_BY_ADDRES = 3;
+
+    /// ===========================================
+    /// ============ Mutable storage ==============  
+    ///@notice Type of variable used for handling numeric sequences
+    using Counters for Counters.Counter;
+
+    ///@notice String with the base for the tokenURI
+    string public baseURI;   
+
+    ///@notice Used to know if the goal is revealed or not
+    bool public revelate;  
+
+    /// @notice Number of NFTs minted
+    Counters.Counter public tokenIdCounter;    
+
+    ///@notice used to know if the sale of NFT has started
+    bool public startSale;    
+    
+    /// ======================================================
+    /// ============ Constructor =============================
+    constructor() ERC721("Life Out Genesis", "LOG") {
+
+        tokenIdCounter.increment();
+        baseURI = "ipfs://QmVy37A4BSoBjz3AMgZCaSE2JZMGoNuo4LebP7pZTSUBMT";   
+    }
+
+    /// ========================================================
+    /// ============= Event ====================================
+    /// @notice Emitted after a successful Withdraw Proceeds
+    /// @param owner Address of owner 
+    /// @param amount Amount of proceeds claimed by owner
+    event WithdrawProceeds(address indexed owner, uint256 amount );
+
+    /// @notice Emitted after a successful Mint Nft
+    /// @param user Address of the user Mint
+    /// @param tokenId Number token Mint
+    event MintLifeOutGenesis(address indexed user, uint256 tokenId); 
+
+    /// @notice Emitted after a successful change starSale variable
+    /// @param owner Address of owner
+    /// @param date Date when change 
+    event SetStartSale(address indexed owner, uint256 date);
+
     ///============================================
     ///============= Errors =======================
     
@@ -40,65 +94,9 @@ contract LifeOutGenesis is ERC721, Ownable {
     ///@notice No token available for sale
     ///@param user Caller address
     error NftSoldOut(address user);
-
-    /// ===========================================
-    /// ============ Immutable storage ============
-    /// @notice Available NFT supply
-    uint256 public immutable AVAILABLE_SUPPLY;
-
-    /// ===========================================
-    /// ============ Mutable storage ==============  
-    ///@notice Type of variable used for handling numeric sequences
-    using Counters for Counters.Counter;
-
-    ///@notice String with the base for the tokenURI
-    string public baseURI;   
-
-    ///@notice Used to know if the goal is revealed or not
-    bool public revelate;  
-
-    /// @notice Number of NFTs minted
-    Counters.Counter public tokenIdCounter;   
-
-    /// @notice Cost to mint each NFT (in wei)
-    uint256 public mintCost;
-
-    ///@notice Maximum number of nft to buy per address
-    uint256 public limitNftByAddress;
-
-    ///@notice used to know if the sale of NFT has started
-    bool public startSale;
-    
-    /// ======================================================
-    /// ============ Constructor =============================
-    constructor() ERC721("Life Out Genesis", "LOG") {
-        AVAILABLE_SUPPLY = 999;  
-        limitNftByAddress = 3;     
-        tokenIdCounter.increment();
-        mintCost = 0.3 ether;    
-        baseURI = "ipfs://QmVy37A4BSoBjz3AMgZCaSE2JZMGoNuo4LebP7pZTSUBMT";   
-    }
-
-    /// ========================================================
-    /// ============= Event ====================================
-    /// @notice Emitted after a successful Withdraw Proceeds
-    /// @param owner Address of owner 
-    /// @param amount Amount of proceeds claimed by owner
-    event WithdrawProceeds(address indexed owner, uint256 amount );
-
-    /// @notice Emitted after a successful Mint Nft
-    /// @param user Address of the user Mint
-    /// @param tokenId Number token Mint
-    event MintLifeOutGenesis(address indexed user, uint256 tokenId); 
-
-    /// @notice Emitted after a successful change starSale variable
-    /// @param owner Address of owner
-    /// @param date Date when change 
-    event SetStartSale(address indexed owner, uint256 date);
    
     /// =========================================================
-    /// ============ Functions ==================================
-  
+    /// ============ Functions ==================================  
 
     //****************************************************** */
     // ************* functions set parameter *************** */
@@ -144,11 +142,11 @@ contract LifeOutGenesis is ERC721, Ownable {
             revert SaleNotStarted(msg.sender);
         }
 
-        if (msg.value != mintCost * amountNft) {
+        if (msg.value != MINT_COST * amountNft) {
             revert IncorrectPayment(msg.sender, msg.value);
         }
 
-        if(amountNft > (limitNftByAddress - balanceOf(msg.sender))){
+        if(amountNft > (LIMIT_NFT_BY_ADDRES - balanceOf(msg.sender))){
             revert NftLimitPerDirection(
                 msg.sender,
                 balanceOf(msg.sender));
@@ -160,9 +158,10 @@ contract LifeOutGenesis is ERC721, Ownable {
             if(tokenIdCounter.current() > AVAILABLE_SUPPLY){
                 revert NftSoldOut(msg.sender);
             }   
+
+            emit MintLifeOutGenesis(msg.sender, tokenIdCounter.current());            
             _safeMint(msg.sender, tokenIdCounter.current());        
             tokenIdCounter.increment();
-            emit MintLifeOutGenesis(msg.sender, tokenIdCounter.current() - 1);
         }          
    
     }
