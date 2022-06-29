@@ -10,59 +10,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 ///@notice Token ERC721 for the life Out 
 contract LifeOutGenesis is ERC721, Ownable {   
 
-    /// ===========================================
-    /// ============ Immutable storage ============
-    /// @notice Available NFT supply
-    uint256 public constant AVAILABLE_SUPPLY = 999;
-
-    /// @notice Cost to mint each NFT 
-    uint256 public constant MINT_COST = 0.3 ether;
-
-    ///@notice Maximum number of nft to buy per address
-    uint256 public constant LIMIT_NFT_BY_ADDRES = 3;
-
-    /// ===========================================
-    /// ============ Mutable storage ==============  
-    ///@notice Type of variable used for handling numeric sequences
-    using Counters for Counters.Counter;
-
-    ///@notice String with the base for the tokenURI
-    string public baseURI;   
-
-    ///@notice Used to know if the goal is revealed or not
-    bool public revelate;  
-
-    /// @notice Number of NFTs minted
-    Counters.Counter public tokenIdCounter;    
-
-    ///@notice used to know if the sale of NFT has started
-    bool public startSale;    
-    
-    /// ======================================================
-    /// ============ Constructor =============================
-    constructor() ERC721("Life Out Genesis", "LOG") {
-
-        tokenIdCounter.increment();
-        baseURI = "ipfs://QmVy37A4BSoBjz3AMgZCaSE2JZMGoNuo4LebP7pZTSUBMT";   
-    }
-
-    /// ========================================================
-    /// ============= Event ====================================
-    /// @notice Emitted after a successful Withdraw Proceeds
-    /// @param owner Address of owner 
-    /// @param amount Amount of proceeds claimed by owner
-    event WithdrawProceeds(address indexed owner, uint256 amount );
-
-    /// @notice Emitted after a successful Mint Nft
-    /// @param user Address of the user Mint
-    /// @param tokenId Number token Mint
-    event MintLifeOutGenesis(address indexed user, uint256 tokenId); 
-
-    /// @notice Emitted after a successful change starSale variable
-    /// @param owner Address of owner
-    /// @param date Date when change 
-    event SetStartSale(address indexed owner, uint256 date);
-
     ///============================================
     ///============= Errors =======================
     
@@ -95,6 +42,65 @@ contract LifeOutGenesis is ERC721, Ownable {
     ///@param user Caller address
     error NftSoldOut(address user);
    
+
+    /// ===========================================
+    /// ============ Immutable storage ============
+    /// @notice Available NFT supply
+    uint256 public constant AVAILABLE_SUPPLY = 999;
+   
+    ///@notice Maximum number of nft to buy per address
+    uint256 public constant LIMIT_NFT_BY_ADDRES = 3;
+
+    /// ===========================================
+    /// ============ Mutable storage ==============  
+    ///@notice Type of variable used for handling numeric sequences
+    using Counters for Counters.Counter;
+
+    ///@notice String with the base for the tokenURI
+    string public baseURI;   
+
+    ///@notice used to know if the sale of NFT has started
+    bool public startSale;   
+
+     /// @notice Cost to mint each NFT 
+    uint256 public mintCost;
+ 
+    /// @notice Number of NFTs minted
+    Counters.Counter public tokenIdCounter;    
+
+    
+    /// ======================================================
+    /// ============ Constructor =============================
+    constructor() ERC721("Life Out Genesis", "LOFG") {
+
+        tokenIdCounter.increment();
+        baseURI = "ipfs://QmdB6jRyg7UCGSb4o6tBDUD5Bp9WhvkzGPC7VfvzsRT5o6/";   
+        mintCost = 0.3 ether;
+    }
+
+    /// ========================================================
+    /// ============= Event ====================================
+    /// @notice Emitted after a successful Withdraw Proceeds
+    /// @param owner Address of owner 
+    /// @param amount Amount of proceeds claimed by owner
+    event WithdrawProceeds(address indexed owner, uint256 amount );
+
+    /// @notice Emitted after a successful Mint Nft
+    /// @param user Address of the user Mint
+    /// @param tokenId Number token Mint
+    event MintLifeOutGenesis(address indexed user, uint256 tokenId); 
+
+    /// @notice Emitted after a successful change starSale variable
+    /// @param owner Address of owner
+    /// @param date Date when change 
+    event SetStartSale(address indexed owner, uint256 date);
+
+    ///@notice Emitted after a successful change mintCost variable
+    ///@param owner Address of owner
+    ///@param amount new value per NFT 
+    event SetMintCost(address indexed owner, uint256 amount);
+
+    
     /// =========================================================
     /// ============ Functions ==================================  
 
@@ -113,10 +119,11 @@ contract LifeOutGenesis is ERC721, Ownable {
         baseURI = setBaseUri;
     }
 
-    ///@notice start the sale of NFTs
-    ///@param value boolean value for sale
-    function setRevelate(bool value) external onlyOwner{
-        revelate = value;
+    ///@notice Allows set price mint by owner
+    ///@param newMintCost value price mint
+    function setMintCost(uint256 newMintCost) external onlyOwner {
+        mintCost = newMintCost;
+        emit SetMintCost(msg.sender, newMintCost);
     }
 
     ///@notice return tokenURI for each token
@@ -124,10 +131,7 @@ contract LifeOutGenesis is ERC721, Ownable {
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {   
         if (!_exists(tokenId)){
             revert TokenDoesNotExist();
-        }
-        if(!revelate){
-            return baseURI;
-        }
+        }     
         return string(abi.encodePacked(baseURI, Strings.toString(tokenId), ".json"));
     }
       
@@ -142,15 +146,14 @@ contract LifeOutGenesis is ERC721, Ownable {
             revert SaleNotStarted(msg.sender);
         }
 
-        if (msg.value != MINT_COST * amountNft) {
+        if (msg.value != mintCost * amountNft) {
             revert IncorrectPayment(msg.sender, msg.value);
         }
 
         if(amountNft > (LIMIT_NFT_BY_ADDRES - balanceOf(msg.sender))){
             revert NftLimitPerDirection(
                 msg.sender,
-                balanceOf(msg.sender));
-                
+                balanceOf(msg.sender));                
         }                
 
         for(uint i; i < amountNft ; i++){
