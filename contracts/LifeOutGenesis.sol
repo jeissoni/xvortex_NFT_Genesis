@@ -74,7 +74,7 @@ contract LifeOutGenesis is ERC721, Ownable {
     constructor() ERC721("Life Out Genesis", "LOFG") {
 
         tokenIdCounter.increment();
-        baseURI = "ipfs://QmdB6jRyg7UCGSb4o6tBDUD5Bp9WhvkzGPC7VfvzsRT5o6/";   
+        baseURI = "ipfs://QmamB3AZV9LtsfxTS2tCjJ9ckkAj3iYwXP9rMQojyrk5gH/";   
         mintCost = 0.3 ether;
     }
 
